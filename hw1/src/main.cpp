@@ -18,7 +18,6 @@ using str=string;
 #include"client.h"
 #include"channel.h"
 
-
 const str connect(const Client&cli){
     str ret("User connected!!\t");
     ret+=cli.info();
@@ -44,7 +43,6 @@ int main(int argc,char**argv){
 
     vector<Client> clients;
     
-    int cid=0;
     const int buf_size=65536;
     char read_buf[buf_size];
 //    char write_buf[buf_size];
@@ -61,31 +59,23 @@ int main(int argc,char**argv){
         int nready=select(maxfd+1,&rset,nullptr,nullptr,nullptr);
         assert(nready);
         if(FD_ISSET(listenfd,&rset)){
-            Client cur(cid++,"");
-            struct sockaddr_in cliaddr;
-            socklen_t clilen=sizeof(cliaddr);
-            cur.fd=accept(listenfd,(struct sockaddr*)&cliaddr,(socklen_t*)&clilen);
-            cur.port=to_string(htons(cliaddr.sin_port));
-            cur.ip=(inet_ntoa(cliaddr.sin_addr));
+            Client cur(listenfd,"");
             clients.push_back(cur);
             assert(clients.size()<=FD_SETSIZE);
-
             cout<<connect(cur);
             continue;
         }
-        for(auto&cli:clients){
-            if(cli.fd!=-1 and FD_ISSET(cli.fd,&rset)){
-                int readn=read(cli.fd,read_buf,buf_size);
-                if(readn<=0 or read_buf[0]=='\0'){
-                    if(read_buf[0]=='\0')
-                        readn=read(cli.fd,read_buf,1);
-                    memset(read_buf,0,buf_size);
-                    cout<<disconnect(cli);
-                    assert(cli.fd!=listenfd);
-                    close(cli.fd);
-                    cli.fd=-1;
-                }else{
-                }
+        for(auto&cli:clients)if(cli.fd!=-1 and FD_ISSET(cli.fd,&rset)){
+            int readn=read(cli.fd,read_buf,buf_size);
+            if(readn<=0 or read_buf[0]=='\0'){
+                if(read_buf[0]=='\0')
+                    readn=read(cli.fd,read_buf,1);
+                cout<<disconnect(cli);
+                assert(cli.fd!=listenfd);
+                close(cli.fd);
+                cli.fd=-1;
+            }else{
+                cli.reply((const str)"Hi\n");
             }
         }
 

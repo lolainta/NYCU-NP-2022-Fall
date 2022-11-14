@@ -6,12 +6,14 @@ using namespace std;
 using str=string;
 
 class Client{
+private:
+    Response resp;
 public:
     int id,fd;
     str nick,name;
     str ip,port;
-    Response resp;
-    Client(int,const str&);
-    void reply(const str&);
+    Client(int lisfd,const str&);
+    void reply(const int&)const;
+    void reply(const str&)const;
     const str info()const;
 };

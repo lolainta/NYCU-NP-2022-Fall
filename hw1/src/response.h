@@ -5,12 +5,12 @@ using str=string;
 
 class Response{
 private:
-    const str header()const;
     str server="llt mircd";
     str cname;
+    str header;
 public:
     int status;
     string message;
     Response(const str&);
-    void reply();
+    void reply(const int&fd,const str&msg)const;
 };
