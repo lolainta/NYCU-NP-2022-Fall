@@ -1,6 +1,12 @@
 #include "client.h"
 
-Client::Client(int _id):id(_id),name(),nick(){};
+Client::Client(int _id,const str&_name):id(_id),resp(_name){
+    
+};
+
+void Client::reply(const str&){
+    
+}
 
 const str Client::info()const{
     str ret;

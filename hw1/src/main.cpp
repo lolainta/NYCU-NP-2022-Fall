@@ -61,7 +61,7 @@ int main(int argc,char**argv){
         int nready=select(maxfd+1,&rset,nullptr,nullptr,nullptr);
         assert(nready);
         if(FD_ISSET(listenfd,&rset)){
-            Client cur(cid++);
+            Client cur(cid++,"");
             struct sockaddr_in cliaddr;
             socklen_t clilen=sizeof(cliaddr);
             cur.fd=accept(listenfd,(struct sockaddr*)&cliaddr,(socklen_t*)&clilen);
@@ -85,13 +85,6 @@ int main(int argc,char**argv){
                     close(cli.fd);
                     cli.fd=-1;
                 }else{
-                    if(read_buf[0]=='/'){
-                        if(!strncmp(read_buf,"/who ",5) or !strncmp(read_buf,"/who\n",5)){
-                        }else if(!strncmp(read_buf,"/name ",6)){
-                        }else{
-                        }
-                    }else{
-                    }
                 }
             }
         }

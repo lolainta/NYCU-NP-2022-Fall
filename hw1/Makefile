@@ -3,7 +3,7 @@ TARGET_EXEC := server
 BUILD_DIR := ./build
 SRC_DIR := ./src
 
-_OBJS := main.o client.o channel.o
+_OBJS := main.o client.o channel.o response.o
 OBJS := $(patsubst %.o,$(BUILD_DIR)/%.o,$(_OBJS))
 
 CXX=g++
