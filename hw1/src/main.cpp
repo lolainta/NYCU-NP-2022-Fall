@@ -2,6 +2,7 @@
 #include<vector>
 #include<cassert>
 #include<cstring>
+#include<sstream>
 #include<unistd.h>
 #include<arpa/inet.h>
 //#include<string.h>
@@ -17,6 +18,27 @@ using str=string;
 
 #include"client.h"
 #include"channel.h"
+
+stringstream ss;
+
+vector<str> split(const str&inp){
+    ss.str(inp);
+    str tmp;
+    vector<str> ret;
+    while(ss>>tmp)
+        ret.push_back(tmp);
+    for(auto i=ret.size()-1;i>=0;--i){
+        if(ret[i].front()==':'){
+            for(auto j=i+1;j<ret.size();++j)
+                ret[i]+=' '+ret[j];
+            ret[i]=ret[i].substr(1);
+            ret.erase(ret.begin()+i+1,ret.end());
+            break;
+        }
+        assert(i);
+    }
+    return ret;
+}
 
 const str connect(const Client&cli){
     str ret("User connected!!\t");
@@ -66,16 +88,44 @@ int main(int argc,char**argv){
             continue;
         }
         for(auto&cli:clients)if(cli.fd!=-1 and FD_ISSET(cli.fd,&rset)){
-            int readn=read(cli.fd,read_buf,buf_size);
-            if(readn<=0 or read_buf[0]=='\0'){
-                if(read_buf[0]=='\0')
-                    readn=read(cli.fd,read_buf,1);
+            memset(read_buf,0,sizeof(read_buf));
+            if(read(cli.fd,read_buf,buf_size)<0)
+                exit(2);
+            str input(read_buf);
+            cout<<input.size()<<":"<<input<<endl;
+            if(input[0]=='\0'){
                 cout<<disconnect(cli);
                 assert(cli.fd!=listenfd);
                 close(cli.fd);
                 cli.fd=-1;
             }else{
-                cli.reply((const str)"Hi\n");
+                vector<string> inp(split(input));
+                for(auto s:inp)
+                    cout<<'<'<<s<<'>';
+                cout<<endl;
+                if(inp[0]=="NICK"){
+                }else if(inp[0]=="USER"){
+                    
+                }else if(inp[0]=="PING"){
+                    
+                }else if(inp[0]=="LIST"){
+                    
+                }else if(inp[0]=="JOIN"){
+                    
+                }else if(inp[0]=="TOPIC"){
+                    
+                }else if(inp[0]=="NAMES"){
+                    
+                }else if(inp[0]=="PART"){
+                    
+                }else if(inp[0]=="USERS"){
+                    
+                }else if(inp[0]=="PRIVMSG"){
+                    
+                }else if(inp[0]=="QUIT"){
+                    
+                }else{
+                }
             }
         }
 
