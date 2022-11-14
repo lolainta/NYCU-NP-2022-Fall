@@ -1,54 +1,23 @@
 #include<iostream>
 #include<vector>
 #include<cassert>
-#include<string>
-#include<string.h>
-#include<signal.h>
-#include<memory>
+#include<cstring>
 #include<unistd.h>
-#include<fcntl.h>
 #include<arpa/inet.h>
-#include<sys/socket.h>
-#include<netinet/in.h>
+//#include<string.h>
+//#include<signal.h>
+//#include<memory>
+//#include<fcntl.h>
+//#include<sys/socket.h>
+//#include<netinet/in.h>
 //#include<libexplain/read.h>
-
-#define memset(...)
 
 using namespace std;
 using str=string;
 
-#include "client.h"
+#include"client.h"
+#include"channel.h"
 
- 
-/*
-typedef struct client{
-    int id;
-    int fd;
-    str nick;
-    str name;
-    str ip,port;
-    client(int _id):nick(),name(){
-        id=_id;
-    }
-    const str info(){
-        str ret;
-        ret+=to_string(id)+'\t';
-        ret+="name: "+name+'\t';
-        ret+="nick: "+nick+'\t';
-        ret+="host<"+ip+':'+port+">"+'\t';
-        return ret;
-    }
-}Client;
-*/
-typedef struct channel{
-    int id;
-    int cnt;
-    str name;
-    channel(int _id,str _name){
-        id=_id;
-        name=_name;
-    }
-}Channel;
 
 const str connect(const Client&cli){
     str ret("User connected!!\t");
@@ -65,7 +34,7 @@ const str disconnect(const Client&cli){
 
 int main(int argc,char**argv){
     int server_port=stoi(argv[1]);
-    struct sockaddr_in servaddr,cliaddr;
+    struct sockaddr_in servaddr;
     int listenfd=socket(AF_INET,SOCK_STREAM,0);
     servaddr.sin_family=AF_INET;
     servaddr.sin_addr.s_addr=htonl(INADDR_ANY);
@@ -78,11 +47,9 @@ int main(int argc,char**argv){
     int cid=0;
     const int buf_size=65536;
     char read_buf[buf_size];
-    char write_buf[buf_size];
+//    char write_buf[buf_size];
 //    signal(SIGPIPE,SIG_IGN);
     while(1){
-        memset(read_buf,0,buf_size);
-        memset(write_buf,0,buf_size);
         int maxfd=listenfd;
         fd_set rset;
         FD_ZERO(&rset);
@@ -131,7 +98,7 @@ int main(int argc,char**argv){
 
         for(int i=clients.size()-1;i>=0;--i)
             if(clients[i].fd==-1){
-                assert(i<clients.size());
+                assert(i<(int)clients.size());
                 clients.erase(clients.begin()+i);
             }
     }
