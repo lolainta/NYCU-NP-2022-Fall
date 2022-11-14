@@ -2,15 +2,20 @@
 #include "response.h"
 
 Response::Response(const str&_cname="Orphan"):cname(_cname){
-    this->header+=':';
-    this->header+=this->server+' ';
-    this->header+=to_string(this->status)+' ';
-    this->header+=cname+' ';
-    this->header+=':';
 };
 
-void Response::reply(const int&fd,const str&msg)const{
-    str ret(this->header);
+const str Response::header(const int&status)const{
+    str ret;
+    ret+=':';
+    ret+=this->server+' ';
+    ret+=to_string(status)+' ';
+    ret+=this->cname+' ';
+    ret+=':';
+    return ret;
+}
+
+void Response::reply(const int&fd,const int&status,const str&msg)const{
+    str ret=this->header(status);
     ret+=msg;
     if(write(fd,ret.c_str(),ret.size())<0)
         exit(1);

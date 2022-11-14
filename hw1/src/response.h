@@ -7,10 +7,9 @@ class Response{
 private:
     str server="llt mircd";
     str cname;
-    str header;
+    const str header(const int&)const;
 public:
-    int status;
     string message;
     Response(const str&);
-    void reply(const int&fd,const str&msg)const;
+    void reply(const int&,const int&,const str&)const;
 };

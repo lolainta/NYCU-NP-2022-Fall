@@ -13,7 +13,7 @@ void Client::reply(const int&status)const{
     
 }
 void Client::reply(const str&msg)const{
-    this->resp.reply(this->fd,msg);
+    this->resp.reply(this->fd,123,msg);
     return;
 }
 
