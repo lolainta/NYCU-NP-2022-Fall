@@ -17,6 +17,7 @@ public:
     void reply(const RPL&)const;
     void reply(const ERR&)const;
     void reply(const ERR&,const str&)const;
+    void reply(const str&)const;
     void set_nick(const str&);
     void set_name(const str&,const str&,const str&,const str&);
     const str info()const;

@@ -33,6 +33,8 @@ void Client::reply(const RPL&rpl)const{
 void Client::reply(const ERR&err)const{
     vector<str> ret(1,resp.header(err));
     switch(err){
+      case ERR_NOORIGIN:
+        ret.front()+=":No origin specified";
     }
     this->resp.reply(ret);
 }
@@ -45,6 +47,10 @@ void Client::reply(const ERR&err,const str&param)const{
         break;
     }
     this->resp.reply(ret);
+}
+
+void Client::reply(const str&msg)const{
+    this->resp.reply(vector<str>(1,msg));
 }
 
 

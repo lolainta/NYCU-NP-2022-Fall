@@ -112,7 +112,11 @@ int main(int argc,char**argv){
                     cli.set_name(inp[1],inp[2],inp[3],inp[4]);
                     cli.reg();
                 }else if(inp[0]=="PING"){
-                    
+                    if(inp.size()<2){
+                        cli.reply(ERR::ERR_NOORIGIN);
+                        break;
+                    }
+                    cli.reply("PONG "+inp[1]+'\n');
                 }else if(inp[0]=="LIST"){
                     
                 }else if(inp[0]=="JOIN"){
