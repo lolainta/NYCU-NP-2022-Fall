@@ -116,7 +116,11 @@ int main(int argc,char**argv){
                         inv(invalid);
                     cli.nick=inp[1];
                 }else if(inp[0]=="USER"){
-                    
+                    if(inp.size()!=5)
+                        inv(invalid);
+                    cli.username=inp[1];
+                    cli.servername=inp[2];
+                    cli.realname=inp[3];
                 }else if(inp[0]=="PING"){
                     
                 }else if(inp[0]=="LIST"){

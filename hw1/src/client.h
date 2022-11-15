@@ -10,7 +10,8 @@ private:
     Response resp;
 public:
     int id,fd;
-    str nick,name;
+    str nick,username;
+    str hostname,servername,realname;
     str ip,port;
     Client(int lisfd,const str&);
     void reply(const int&)const;
