@@ -128,6 +128,11 @@ int main(int argc,char**argv){
                 }else if(inp[0]=="PART"){
                     
                 }else if(inp[0]=="USERS"){
+                    cli.reg();
+                    cli.reply(RPL::RPL_USERSSTART);
+                    for(auto cli:clients)
+                        cli.reply(RPL::RPL_USERS,cli.info());
+                    cli.reply(RPL::RPL_ENDOFUSERS);
                     
                 }else if(inp[0]=="PRIVMSG"){
                     

@@ -27,6 +27,26 @@ void Client::reply(const RPL&rpl)const{
       case RPL_ENDOFMOTD:
         ret.front()+=":End of /MOTD command\n";
         break;
+      case RPL_USERSSTART:
+        ret.front()+=":UserID   Terminal  Host\n";
+        break;
+      case RPL_ENDOFUSERS:
+        ret.front()+=":End of users\n";
+        break;
+      default:
+        ret.front()+=":Not implemented yet!\n";
+    }
+    this->resp.reply(ret);
+}
+
+void Client::reply(const RPL&rpl,const str&param)const{
+    vector<str> ret(1,resp.header(rpl));
+    switch(rpl){
+      case RPL_USERS:
+        ret.front()+=param;
+        break;
+      default:
+        ret.front()+=":Not implemented yet!\n";
     }
     this->resp.reply(ret);
 }
@@ -34,7 +54,9 @@ void Client::reply(const ERR&err)const{
     vector<str> ret(1,resp.header(err));
     switch(err){
       case ERR_NOORIGIN:
-        ret.front()+=":No origin specified";
+        ret.front()+=":No origin specified\n";
+      default:
+        ret.front()+=":Not implemented yet!\n";
     }
     this->resp.reply(ret);
 }
@@ -45,6 +67,8 @@ void Client::reply(const ERR&err,const str&param)const{
       case ERR_NEEDMOREPARAMS:
         ret.front()+=param+" :Not enough parameters\n";
         break;
+      default:
+        ret.front()+=":Not implemented yet!\n";
     }
     this->resp.reply(ret);
 }
@@ -66,7 +90,19 @@ void Client::set_name(const str&uname,const str&hname,const str&sname,const str&
     this->resp.set_cname(uname);
 }
 
+const str Client::fixl(const str&s,const size_t&len)const{
+    if(s.size()>len)
+        return s;
+    return str(len-s.size(),' ')+s;
+}
+
 const str Client::info()const{
+    str ret;
+    ret+=':'+fixl(this->nick,8)+' '+fixl("-",9)+' '+fixl(this->ip,8);
+    return ret+'\n';
+}
+
+const str Client::information()const{
     str ret;
     ret+=to_string(this->id)+'\t';
     ret+="name: "+this->username+'\t';
@@ -77,13 +113,13 @@ const str Client::info()const{
 
 const str Client::connected()const{
     str ret("User connected!!\t");
-    ret+=this->info();
+    ret+=this->information();
     return ret;
 }
 
 const str Client::disconnected(){
     str ret("User disconnected!!\t");
-    ret+=this->info();
+    ret+=this->information();
     close(this->fd);
     this->fd=-1;
     return ret;

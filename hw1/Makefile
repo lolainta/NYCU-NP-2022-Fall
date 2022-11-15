@@ -7,8 +7,7 @@ _OBJS := main.o client.o channel.o response.o
 OBJS := $(patsubst %.o,$(BUILD_DIR)/%.o,$(_OBJS))
 
 CXX=g++
-CPPFLAGS=-O3 -g -Wall -std=c++17
-
+CPPFLAGS=-O3 -g -Wall -std=c++20
 
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
 	$(CXX) $(OBJS) -o $@
