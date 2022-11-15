@@ -19,24 +19,32 @@ using str=string;
 #include"client.h"
 #include"channel.h"
 
-stringstream ss;
-
 vector<str> split(const str&inp){
-    ss.str(inp);
+    stringstream ss(inp);
     str tmp;
     vector<str> ret;
     while(ss>>tmp)
         ret.push_back(tmp);
-    for(auto i=ret.size()-1;i>=0;--i){
+    bool invalid=false;
+    for(auto i=(int)ret.size()-1;i>=0;--i){
+        if(!i){
+            invalid=true;
+            break;
+        }
         if(ret[i].front()==':'){
-            for(auto j=i+1;j<ret.size();++j)
+            if(ret[i].size()<2){
+                invalid=true;
+                break;
+            }
+            for(int j=i+1;j<(int)ret.size();++j)
                 ret[i]+=' '+ret[j];
             ret[i]=ret[i].substr(1);
             ret.erase(ret.begin()+i+1,ret.end());
             break;
         }
-        assert(i);
     }
+    if(invalid)
+        ret=vector<str>(1,"Invalid Format!");
     return ret;
 }
 
@@ -92,7 +100,6 @@ int main(int argc,char**argv){
             if(read(cli.fd,read_buf,buf_size)<0)
                 exit(2);
             str input(read_buf);
-            cout<<input.size()<<":"<<input<<endl;
             if(input[0]=='\0'){
                 cout<<disconnect(cli);
                 assert(cli.fd!=listenfd);
@@ -103,7 +110,11 @@ int main(int argc,char**argv){
                 for(auto s:inp)
                     cout<<'<'<<s<<'>';
                 cout<<endl;
+                if(inp.empty())
+                    continue;
+                bool invalid=false;;
                 if(inp[0]=="NICK"){
+
                 }else if(inp[0]=="USER"){
                     
                 }else if(inp[0]=="PING"){
@@ -125,6 +136,10 @@ int main(int argc,char**argv){
                 }else if(inp[0]=="QUIT"){
                     
                 }else{
+                    invalid=true;
+                }
+                if(invalid){
+                    cli.reply("Invalid Command!");
                 }
             }
         }
