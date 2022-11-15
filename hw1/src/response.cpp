@@ -1,8 +1,6 @@
 #include <unistd.h>
+#include <vector>
 #include "response.h"
-
-Response::Response(const str&_cname="Orphan"):cname(_cname){
-};
 
 const str Response::header(const int&status)const{
     str ret;
@@ -10,29 +8,22 @@ const str Response::header(const int&status)const{
     ret+=this->server+' ';
     ret+=to_string(status)+' ';
     ret+=this->cname+' ';
-    ret+=':';
     return ret;
 }
 
-void Response::reply(const int&fd,const int&status,const str&msg)const{
-    str ret=this->header(status);
-    ret+=msg+'\n';
-    if(write(fd,ret.c_str(),ret.size())<0)
+void Response::reply(const str&msg)const{
+    if(write(this->fd,msg.c_str(),msg.size())<0)
         exit(1);
 }
 
-void Response::reply(const int&fd,const RPL&rpl)const{
-    str ret=this->header(rpl);
-    ret+="Hello, reply!"+'\n';
-    if(write(fd,ret.c_str(),ret.size())<0)
-        exit(1);
+void Response::reply(const vector<string>&rep)const{
+    for(auto line:rep)
+        this->reply(line);
 }
 
-void Response::reply(const int&fd,const ERR&err)const{
-    str ret=this->header(err);
-    ret+="Hello, error!"+'\n';
-    if(write(fd,ret.c_str(),ret.size())<0)
-        exit(1);
+void Response::set_cname(const str&_cname){
+    this->cname=_cname;
 }
+
 
 

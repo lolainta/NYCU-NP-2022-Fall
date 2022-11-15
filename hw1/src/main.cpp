@@ -55,8 +55,10 @@ int main(int argc,char**argv){
     servaddr.sin_family=AF_INET;
     servaddr.sin_addr.s_addr=htonl(INADDR_ANY);
     servaddr.sin_port=htons(server_port);
-    bind(listenfd,(struct sockaddr*)&servaddr,sizeof(servaddr));
-    listen(listenfd,4096);
+    if(bind(listenfd,(struct sockaddr*)&servaddr,sizeof(servaddr))<0)
+        perror(to_string(__LINE__).c_str());
+    if(listen(listenfd,4096)<0)
+        perror(to_string(__LINE__).c_str());
 
     vector<Client> clients;
     
@@ -76,7 +78,7 @@ int main(int argc,char**argv){
         int nready=select(maxfd+1,&rset,nullptr,nullptr,nullptr);
         assert(nready);
         if(FD_ISSET(listenfd,&rset)){
-            Client cur(listenfd,"");
+            Client cur(listenfd);
             clients.push_back(cur);
             assert(clients.size()<=FD_SETSIZE);
             cout<<cur.connected()<<endl;
@@ -100,13 +102,15 @@ int main(int argc,char**argv){
                 if(inp[0]=="NICK"){
                     if(inp.size()!=2)
                         cout<<"Too many arguments, only take the first one"<<endl;
-                    cli.nick=inp[1];
+                    cli.set_nick(inp[1]);
+                    cli.reg();
                 }else if(inp[0]=="USER"){
-                    if(inp.size()!=5)
-                        inv(invalid);
-                    cli.username=inp[1];
-                    cli.servername=inp[2];
-                    cli.realname=inp[3];
+                    if(inp.size()<5){
+                        cli.reply(ERR::ERR_NEEDMOREPARAMS,"USER");
+                        break;
+                    }
+                    cli.set_name(inp[1],inp[2],inp[3],inp[4]);
+                    cli.reg();
                 }else if(inp[0]=="PING"){
                     
                 }else if(inp[0]=="LIST"){
