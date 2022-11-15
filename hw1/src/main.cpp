@@ -27,6 +27,8 @@ vector<str> split(const str&inp){
     vector<str> ret;
     while(ss>>tmp)
         ret.push_back(tmp);
+    if(ret.size()==1)
+        return ret;
     bool invalid=false;
     for(auto i=(int)ret.size()-1;i>=0;--i){
         if(!i)
@@ -45,19 +47,6 @@ vector<str> split(const str&inp){
         ret=vector<str>(1,"Invalid Format!");
     return ret;
 }
-
-const str connect(const Client&cli){
-    str ret("User connected!!\t");
-    ret+=cli.info();
-    return ret+'\n';
-}
-
-const str disconnect(const Client&cli){
-    str ret("User disconnected!!\t");
-    ret+=cli.info();
-    return ret+'\n';
-}
-
 
 int main(int argc,char**argv){
     int server_port=stoi(argv[1]);
@@ -90,7 +79,7 @@ int main(int argc,char**argv){
             Client cur(listenfd,"");
             clients.push_back(cur);
             assert(clients.size()<=FD_SETSIZE);
-            cout<<connect(cur);
+            cout<<cur.connected()<<endl;
             continue;
         }
         for(auto&cli:clients)if(cli.fd!=-1 and FD_ISSET(cli.fd,&rset)){
@@ -99,10 +88,7 @@ int main(int argc,char**argv){
                 exit(2);
             str input(read_buf);
             if(input[0]=='\0'){
-                cout<<disconnect(cli);
-                assert(cli.fd!=listenfd);
-                close(cli.fd);
-                cli.fd=-1;
+                cout<<cli.disconnected()<<endl;;
             }else{
                 vector<string> inp(split(input));
                 for(auto s:inp)
@@ -138,7 +124,7 @@ int main(int argc,char**argv){
                 }else if(inp[0]=="PRIVMSG"){
                     
                 }else if(inp[0]=="QUIT"){
-                    
+                    cout<<cli.disconnected()<<endl;
                 }else{
                     invalid=true;
                 }

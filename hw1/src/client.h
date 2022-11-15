@@ -17,4 +17,6 @@ public:
     void reply(const int&)const;
     void reply(const str&)const;
     const str info()const;
+    const str connected()const;
+    const str disconnected();
 };
