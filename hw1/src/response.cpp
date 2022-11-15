@@ -16,7 +16,23 @@ const str Response::header(const int&status)const{
 
 void Response::reply(const int&fd,const int&status,const str&msg)const{
     str ret=this->header(status);
-    ret+=msg;
+    ret+=msg+'\n';
     if(write(fd,ret.c_str(),ret.size())<0)
         exit(1);
 }
+
+void Response::reply(const int&fd,const RPL&rpl)const{
+    str ret=this->header(rpl);
+    ret+="Hello, reply!"+'\n';
+    if(write(fd,ret.c_str(),ret.size())<0)
+        exit(1);
+}
+
+void Response::reply(const int&fd,const ERR&err)const{
+    str ret=this->header(err);
+    ret+="Hello, error!"+'\n';
+    if(write(fd,ret.c_str(),ret.size())<0)
+        exit(1);
+}
+
+

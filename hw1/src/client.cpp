@@ -11,12 +11,11 @@ Client::Client(int listenfd,const str&_name):resp(_name){
     this->connected();
 };
 
-void Client::reply(const int&status)const{
-    
+void Client::reply(const RPL&rpl)const{
+    this->resp.reply(this->fd,rpl);
 }
-void Client::reply(const str&msg)const{
-    this->resp.reply(this->fd,123,msg);
-    return;
+void Client::reply(const ERR&err)const{
+    this->resp.reply(this->fd,err);
 }
 
 const str Client::info()const{
@@ -40,4 +39,8 @@ const str Client::disconnected(){
     close(this->fd);
     this->fd=-1;
     return ret;
+}
+
+const bool Client::notreg()const{
+    return this->nick.empty() and this->username.empty();
 }
