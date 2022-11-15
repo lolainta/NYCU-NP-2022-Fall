@@ -29,22 +29,22 @@ vector<str> split(const str&inp){
         ret.push_back(tmp);
     if(ret.size()==1)
         return ret;
-    bool invalid=false;
-    for(auto i=(int)ret.size()-1;i>=0;--i){
-        if(!i)
-            inv(invalid);
-        if(ret[i].front()==':'){
-            if(ret[i].size()<2)
-                inv(invalid);
-            for(int j=i+1;j<(int)ret.size();++j)
-                ret[i]+=' '+ret[j];
-            ret[i]=ret[i].substr(1);
-            ret.erase(ret.begin()+i+1,ret.end());
+   return ret;
+}
+
+vector<str> merge(const vector<str>&org){
+    vector<str> ret;
+    size_t i;
+    for(i=0;i<org.size();++i){
+        if(org[i].front()==':'){
+            assert(org[i].size()>1);
+            ret.push_back(org[i].substr(1));
             break;
         }
+        ret.push_back(org[i]); 
     }
-    if(invalid)
-        ret=vector<str>(1,"Invalid Format!");
+    for(;i<org.size();++i)
+        ret.push_back(org[i]);
     return ret;
 }
 
@@ -99,7 +99,7 @@ int main(int argc,char**argv){
                 bool invalid=false;;
                 if(inp[0]=="NICK"){
                     if(inp.size()!=2)
-                        inv(invalid);
+                        cout<<"Too many arguments, only take the first one"<<endl;
                     cli.nick=inp[1];
                 }else if(inp[0]=="USER"){
                     if(inp.size()!=5)
@@ -129,7 +129,7 @@ int main(int argc,char**argv){
                     invalid=true;
                 }
                 if(invalid){
-                    cli.reply("Invalid Command!");
+//                    cli.reply("Invalid Command!");
                 }
             }
         }
