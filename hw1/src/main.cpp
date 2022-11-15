@@ -19,6 +19,8 @@ using str=string;
 #include"client.h"
 #include"channel.h"
 
+#define inv(x) {x=true;break;}
+
 vector<str> split(const str&inp){
     stringstream ss(inp);
     str tmp;
@@ -27,15 +29,11 @@ vector<str> split(const str&inp){
         ret.push_back(tmp);
     bool invalid=false;
     for(auto i=(int)ret.size()-1;i>=0;--i){
-        if(!i){
-            invalid=true;
-            break;
-        }
+        if(!i)
+            inv(invalid);
         if(ret[i].front()==':'){
-            if(ret[i].size()<2){
-                invalid=true;
-                break;
-            }
+            if(ret[i].size()<2)
+                inv(invalid);
             for(int j=i+1;j<(int)ret.size();++j)
                 ret[i]+=' '+ret[j];
             ret[i]=ret[i].substr(1);
@@ -114,7 +112,9 @@ int main(int argc,char**argv){
                     continue;
                 bool invalid=false;;
                 if(inp[0]=="NICK"){
-
+                    if(inp.size()!=2)
+                        inv(invalid);
+                    cli.nick=inp[1];
                 }else if(inp[0]=="USER"){
                     
                 }else if(inp[0]=="PING"){
