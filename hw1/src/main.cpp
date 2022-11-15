@@ -128,7 +128,10 @@ int main(int argc,char**argv){
                 }else if(inp[0]=="PART"){
                     
                 }else if(inp[0]=="USERS"){
-                    cli.reg();
+                    if(!cli.reg()){
+                        cli.reply(ERR::ERR_NOTREGISTERED);
+                        break;
+                    }
                     cli.reply(RPL::RPL_USERSSTART);
                     for(auto cli:clients)
                         cli.reply(RPL::RPL_USERS,cli.info());

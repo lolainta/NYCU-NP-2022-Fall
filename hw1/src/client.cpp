@@ -55,6 +55,10 @@ void Client::reply(const ERR&err)const{
     switch(err){
       case ERR_NOORIGIN:
         ret.front()+=":No origin specified\n";
+        break;
+      case ERR_NOTREGISTERED:
+        ret.front()+=":You have not registered\n";
+        break;
       default:
         ret.front()+=":Not implemented yet!\n";
     }
@@ -129,11 +133,14 @@ const bool Client::notreg()const{
     return this->nick.empty() or this->username.empty();
 }
 
-void Client::reg()const{
-    if(!this->notreg()){
+bool Client::reg()const{
+    if(this->notreg()){
+        return false;
+    }else{
         this->reply(RPL::RPL_MOTDSTART);
         this->reply(RPL::RPL_MOTD);
         this->reply(RPL::RPL_ENDOFMOTD);
+        return true;
     }
 }
 

@@ -11,6 +11,7 @@ private:
     str nick,username;
     str hostname,servername,realname;
     const str fixl(const str&,const size_t&)const;
+    const bool notreg()const;
 public:
     int id,fd;
     str ip,port;
@@ -26,6 +27,5 @@ public:
     const str information()const;
     const str connected()const;
     const str disconnected();
-    const bool notreg()const;
-    void reg()const;
+    bool reg()const;
 };
