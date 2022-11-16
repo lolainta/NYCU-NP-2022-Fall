@@ -13,3 +13,9 @@ void Channel::set_topic(cstr&_topic){
 cstr Channel::get_topic()const{
     return this->topic;
 }
+
+void Channel::erase(Client*cptr){
+    for(auto it=clis.begin();it!=clis.end();++it)
+        if((Client*)&(*it)==cptr)
+            return clis.erase(it),void();
+}

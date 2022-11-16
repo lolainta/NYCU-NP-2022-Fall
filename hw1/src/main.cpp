@@ -61,12 +61,11 @@ vector<Channel>::iterator addCh(vector<Channel>&chs,cstr&chname){
 }
 */
 
-Channel*addCh(vector<Channel>&chs,cstr&chname){
+Channel*getCh(vector<Channel>&chs,cstr&chname){
     for(auto&ch:chs)
         if(ch.name==chname)
             return &ch;
-    chs.emplace_back(chname);
-    return &chs.back();
+    return nullptr;
 }
 
 int main(int argc,char**argv){
@@ -157,7 +156,11 @@ int main(int argc,char**argv){
                         cli.reply(ERR::ERR_NOSUCHCHANNEL,inp[1]);
                         break;
                     }
-                    auto ch=addCh(channels,inp[1]);
+                    auto ch=getCh(channels,inp[1]);
+                    if(!ch){
+                        channels.emplace_back(inp[1]);
+                        ch=&channels.back();
+                    }
                     cli.set_channel(ch);
                     ch->add_user(&cli);
                     if(ch->get_topic()!="")
@@ -196,7 +199,20 @@ int main(int argc,char**argv){
                         cli.reply(ERR::ERR_NOTREGISTERED);
                         break;
                     }
-                  
+                    if(inp.size()<2){
+                        cli.reply(ERR::ERR_NEEDMOREPARAMS,"PART");
+                        break;
+                    }
+                    if(inp[1].front()!='#' or !getCh(channels,inp[1])){
+                        cli.reply(ERR::ERR_NOSUCHCHANNEL,"PART");
+                        break;
+                    }
+                    if(cli.ch==nullptr or cli.ch->name!=inp[1]){
+                        cli.reply(ERR::ERR_NOTONCHANNEL,inp[1]);
+                        break;
+                    }
+                    cli.ch->erase(&cli);
+                    cli.ch=nullptr;
                 }else if(inp[0]=="USERS"){
                     if(cli.notreg()){
                         cli.reply(ERR::ERR_NOTREGISTERED);

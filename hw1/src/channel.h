@@ -20,6 +20,7 @@ public:
     void add_user(Client*);
     void set_topic(cstr&);
     cstr get_topic()const;
+    void erase(Client*);
 };
 
 #endif
