@@ -31,7 +31,7 @@ cstr connect(Client&x){
     return "* client connected from "+x.ip+":"+x.port+" to "+(x.cmd?"control":"sink")+"\n";
 }
 
-int counter=0;
+uint64_t counter=0;
 
 const uint64_t gettime(){
     using namespace std::chrono;
@@ -47,7 +47,6 @@ cstr stime(uint64_t time){
 
 cstr reset(){
     str ret=stime(gettime())+" RESET "+to_string(counter)+"\n";
-    counter=0;
     return ret;
 }
 cstr ping(){
@@ -59,8 +58,8 @@ cstr report(uint64_t&last){
     auto elaps=cur-last;
     str ret=stime(gettime())+" REPORT "+to_string(counter)+' ';
     ret+=stime(elaps)+' ';
-    ret+=to_string((long double)counter/(long double)elaps);
-    ret+="Mpbs\n";
+    ret+=to_string((long double)counter/(long double)elaps/1000.0*8.0);
+    ret+="Mbps\n";
     return ret;
 }
 
@@ -138,6 +137,8 @@ int main(int argc,char**argv){
                         if(!strncmp(read_buf,"/reset\n",7)){
                             str msg(reset());
                             write(cli.fd,msg.c_str(),msg.size());
+                            counter=0;
+                            last=gettime();
                         }else if(!strncmp(read_buf,"/ping\n",6)){
                             str msg(ping());
                             write(cli.fd,msg.c_str(),msg.size());
