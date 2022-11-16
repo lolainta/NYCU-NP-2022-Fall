@@ -14,12 +14,11 @@ private:
     Response resp;
     str nick,username;
     str hostname,servername,realname;
-    vector<Channel>::iterator ch;
     const str fixl(const str&,const size_t&)const;
-    const bool notreg()const;
 public:
     int id,fd;
     str ip,port;
+    Channel*ch;
     Client(int);
     void reply(const RPL&)const;
     void reply(const RPL&,const str&)const;
@@ -28,11 +27,12 @@ public:
     void reply(const str&)const;
     void set_nick(const str&);
     void set_name(const str&,const str&,const str&,const str&);
-    void set_channel(vector<Channel>::iterator);
+    void set_channel(Channel*);
     const str info()const;
     const str information()const;
     const str connected()const;
     const str disconnected();
+    const bool notreg()const;
     bool reg()const;
 };
 #endif

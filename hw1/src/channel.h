@@ -18,6 +18,7 @@ public:
     Channel(cstr&);
     str name;
     void add_user(Client*);
+    void set_topic(cstr&);
     cstr get_topic()const;
 };
 

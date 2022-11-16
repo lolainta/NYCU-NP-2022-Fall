@@ -4,7 +4,7 @@
 #include "client.h"
 #include "channel.h"
 
-Client::Client(int listenfd){
+Client::Client(int listenfd):ch(nullptr){
     struct sockaddr_in cliaddr;
     socklen_t clilen=sizeof(cliaddr);
     this->resp.fd=this->fd=accept(listenfd,(struct sockaddr*)&cliaddr,(socklen_t*)&clilen);
@@ -16,6 +16,9 @@ Client::Client(int listenfd){
 void Client::reply(const RPL&rpl)const{
     vector<str> ret(1,resp.header(rpl));
     switch(rpl){
+      case RPL::RPL_NOTOPIC:
+        ret.front()+=this->ch->name+" :No topic is set\n";
+        break;
       case RPL::RPL_TOPIC:
         ret.front()+=this->ch->name+" :"+this->ch->get_topic()+'\n';
         break;
@@ -75,6 +78,9 @@ void Client::reply(const ERR&err,const str&param)const{
       case ERR_NOSUCHCHANNEL:
         ret.front()+=param+" :No such channel\n";
         break;
+      case ERR_NOTONCHANNEL:
+        ret.front()+=param+" :You're not on that channel\n";
+        break;
       case ERR_NEEDMOREPARAMS:
         ret.front()+=param+" :Not enough parameters\n";
         break;
@@ -101,8 +107,8 @@ void Client::set_name(const str&uname,const str&hname,const str&sname,const str&
     this->resp.set_cname(uname);
 }
 
-void Client::set_channel(vector<Channel>::iterator it){
-    this->ch=it;
+void Client::set_channel(Channel*ptr){
+    this->ch=ptr;
 }
 
 const str Client::fixl(const str&s,const size_t&len)const{

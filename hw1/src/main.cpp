@@ -20,6 +20,8 @@ using cstr=const string;
 #include"client.h"
 #include"channel.h"
 
+const vector<Channel>::iterator nullit;
+
 #define inv(x) {x=true;break;}
 
 vector<str> split(cstr&inp){
@@ -39,22 +41,32 @@ vector<str> merge(const vector<str>&org){
     for(i=0;i<org.size();++i){
         if(org[i].front()==':'){
             assert(org[i].size()>1);
-            ret.push_back(org[i].substr(1));
+            ret.push_back(org[i++].substr(1));
             break;
         }
         ret.push_back(org[i]); 
     }
     for(;i<org.size();++i)
-        ret.push_back(org[i]);
+        ret.back()+=org[i];
     return ret;
 }
 
+/*
 vector<Channel>::iterator addCh(vector<Channel>&chs,cstr&chname){
     for(auto it=chs.begin();it!=chs.end();++it)
         if(it->name==chname)
             return it;
     chs.emplace_back(chname);
     return prev(chs.end());
+}
+*/
+
+Channel*addCh(vector<Channel>&chs,cstr&chname){
+    for(auto&ch:chs)
+        if(ch.name==chname)
+            return &ch;
+    chs.emplace_back(chname);
+    return &chs.back();
 }
 
 int main(int argc,char**argv){
@@ -91,7 +103,7 @@ int main(int argc,char**argv){
             Client cur(listenfd);
             clients.push_back(cur);
             assert(clients.size()<=FD_SETSIZE);
-            cout<<cur.connected()<<endl;
+            cout<<cur.connected()<<endl<<flush;
             continue;
         }
         for(auto&cli:clients)if(cli.fd!=-1 and FD_ISSET(cli.fd,&rset)){
@@ -100,12 +112,12 @@ int main(int argc,char**argv){
                 exit(2);
             str input(read_buf);
             if(input[0]=='\0'){
-                cout<<cli.disconnected()<<endl;;
+                cout<<cli.disconnected()<<endl<<flush;
             }else{
                 vector<string> inp(split(input));
                 for(auto s:inp)
                     cout<<'<'<<s<<'>';
-                cout<<endl;
+                cout<<endl<<flush;
                 if(inp.empty())
                     continue;
                 bool invalid=false;;
@@ -133,7 +145,7 @@ int main(int argc,char**argv){
                     
                     
                 }else if(inp[0]=="JOIN"){
-                    if(!cli.reg()){
+                    if(cli.notreg()){
                         cli.reply(ERR::ERR_NOTREGISTERED);
                         break;
                     }
@@ -148,27 +160,45 @@ int main(int argc,char**argv){
                     auto ch=addCh(channels,inp[1]);
                     cli.set_channel(ch);
                     ch->add_user(&cli);
-                    cli.reply(RPL::RPL_TOPIC);
+                    if(ch->get_topic()!="")
+                        cli.reply(RPL::RPL_TOPIC);
+                    else
+                        cli.reply(RPL::RPL_NOTOPIC);
                 }else if(inp[0]=="TOPIC"){
-                     if(!cli.reg()){
+                    if(cli.notreg()){
                         cli.reply(ERR::ERR_NOTREGISTERED);
                         break;
                     }
-                    
+                    if(inp.size()<2){
+                        cli.reply(ERR::ERR_NEEDMOREPARAMS,"TOPIC");
+                        break;
+                    }
+                    if(cli.ch==nullptr or cli.ch->name!=inp[1]){
+                        cli.reply(ERR::ERR_NOTONCHANNEL,inp[1]);
+                        break;
+                    }
+                    if(inp.size()>2){
+                        inp=merge(inp);
+                        cli.ch->set_topic(inp[2]);
+                    }
+                    if(cli.ch->get_topic()!="")
+                        cli.reply(RPL::RPL_TOPIC);
+                    else
+                        cli.reply(RPL::RPL_NOTOPIC);
                 }else if(inp[0]=="NAMES"){
-                      if(!cli.reg()){
+                    if(cli.notreg()){
                         cli.reply(ERR::ERR_NOTREGISTERED);
                         break;
                     }
                    
                 }else if(inp[0]=="PART"){
-                       if(!cli.reg()){
+                    if(cli.notreg()){
                         cli.reply(ERR::ERR_NOTREGISTERED);
                         break;
                     }
                   
                 }else if(inp[0]=="USERS"){
-                    if(!cli.reg()){
+                    if(cli.notreg()){
                         cli.reply(ERR::ERR_NOTREGISTERED);
                         break;
                     }
@@ -178,7 +208,7 @@ int main(int argc,char**argv){
                     cli.reply(RPL::RPL_ENDOFUSERS);
                     
                 }else if(inp[0]=="PRIVMSG"){
-                        if(!cli.reg()){
+                    if(cli.notreg()){
                         cli.reply(ERR::ERR_NOTREGISTERED);
                         break;
                     }
