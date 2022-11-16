@@ -74,9 +74,9 @@ int main(int argc,char**argv){
     servaddr.sin_addr.s_addr=htonl(INADDR_ANY);
     servaddr.sin_port=htons(server_port);
     if(bind(listenfd,(struct sockaddr*)&servaddr,sizeof(servaddr))<0)
-        perror(to_string(__LINE__).c_str());
+        perror(to_string(__LINE__).c_str()),exit(1);
     if(listen(listenfd,4096)<0)
-        perror(to_string(__LINE__).c_str());
+        perror(to_string(__LINE__).c_str()),exit(2);
 
     vector<Client> clients;
     vector<Channel> channels;
@@ -119,8 +119,14 @@ int main(int argc,char**argv){
                     continue;
                 if(inp[0]=="NICK"){
                     if(inp.size()<2){
-                        cout<<"Not enough argument, but no return!\n";
-                        continue;
+                        cli.reply(ERR::ERR_NONICKNAMEGIVEN);
+                        break;
+                    }
+                    for(auto c:clients){
+                        if(c.get_nick()==inp[1]){
+                            cli.reply(ERR::ERR_NICKCOLLISION,inp[1]);
+                            goto fzhong;
+                        }
                     }
                     cli.set_nick(inp[1]);
                     cli.reg();
@@ -180,6 +186,7 @@ int main(int argc,char**argv){
                         cli.reply(RPL::RPL_TOPIC);
                     else
                         cli.reply(RPL::RPL_NOTOPIC);
+                    ch->broadcast(":"+cli.get_nick()+" "+input,str());
                     cli.reply(RPL::RPL_NAMREPLY,ch->names());
                     cli.reply(RPL::RPL_ENDOFNAMES,ch->name);
 
@@ -240,6 +247,7 @@ int main(int argc,char**argv){
                         cli.reply(ERR::ERR_NOTONCHANNEL,inp[1]);
                         break;
                     }
+                    cli.ch->broadcast(":"+cli.get_nick()+" "+input,str());
                     cli.ch->erase(cli.get_nick());
                     cli.ch=nullptr;
                 }else if(inp[0]=="USERS"){
@@ -248,8 +256,8 @@ int main(int argc,char**argv){
                         break;
                     }
                     cli.reply(RPL::RPL_USERSSTART);
-                    for(auto clients:clients)
-                        cli.reply(RPL::RPL_USERS,clients.info());
+                    for(auto client:clients)
+                        cli.reply(RPL::RPL_USERS,client.info());
                     cli.reply(RPL::RPL_ENDOFUSERS);
                     
                 }else if(inp[0]=="PRIVMSG"){
@@ -257,17 +265,21 @@ int main(int argc,char**argv){
                         cli.reply(ERR::ERR_NOTREGISTERED);
                         break;
                     }
-                    if(inp.size()<3){
-                        cli.reply(ERR::ERR_NEEDMOREPARAMS,"PRIVMSG");
+                    if(inp.size()==1){
+                        cli.reply(ERR::ERR_NOTEXTTOSEND);
                         break;
                     }
-                    inp=merge(inp);
-                    if(!getCh(channels,inp[1])){
+                    if(inp.size()==2){
                         cli.reply(ERR::ERR_NOSUCHCHANNEL,inp[1]);
                         break;
                     }
-
-                 
+                    inp=merge(inp);
+                    auto ch=getCh(channels,inp[1]);
+                    if(!ch){
+                        cli.reply(ERR::ERR_NOSUCHNICK,inp[1]);
+                        break;
+                    }
+                    ch->broadcast(":"+cli.get_nick()+" "+input,cli.get_nick());
                 }else if(inp[0]=="QUIT"){
                     cout<<cli.disconnected()<<endl;
                 }else{
@@ -275,7 +287,7 @@ int main(int argc,char**argv){
                 }
             }
         }
-
+fzhong:
         for(int i=clients.size()-1;i>=0;--i)
             if(clients[i].fd==-1){
                 assert(i<(int)clients.size());

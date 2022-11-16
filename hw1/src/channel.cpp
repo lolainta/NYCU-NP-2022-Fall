@@ -35,3 +35,8 @@ cstr Channel::names()const{
         ret+=cli->get_nick()+' ';
     return ret+'\n';
 }
+
+void Channel::broadcast(cstr&msg,cstr&sender)const{
+    for(auto cli:clis)if(cli->get_nick()!=sender)
+        cli->reply(msg);
+}

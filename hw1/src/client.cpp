@@ -28,14 +28,14 @@ void Client::reply(const RPL&rpl)const{
       case RPL::RPL_TOPIC:
         ret.front()+=this->ch->name+" :"+this->ch->get_topic()+'\n';
         break;
-      case RPL::RPL_MOTDSTART:
-        ret.front()+=":- "+resp.server+" Message of the day - \n";
-        break;
       case RPL::RPL_MOTD:
         ret.clear();
         ret.push_back(resp.header(rpl)+":- Welcome\n");
         ret.push_back(resp.header(rpl)+":- This is the motd.\n");
         ret.push_back(resp.header(rpl)+":- This server is developed by lolainta.\n");
+        break;
+      case RPL::RPL_MOTDSTART:
+        ret.front()+=":- "+resp.server+" Message of the day - \n";
         break;
       case RPL_ENDOFMOTD:
         ret.front()+=":End of /MOTD command\n";
@@ -78,6 +78,12 @@ void Client::reply(const ERR&err)const{
       case ERR_NOORIGIN:
         ret.front()+=":No origin specified\n";
         break;
+      case ERR_NOTEXTTOSEND:
+        ret.front()+=":No text to send\n";
+        break;
+      case ERR_NONICKNAMEGIVEN:
+        ret.front()+=":No nickname given\n";
+        break;
       case ERR_NOTREGISTERED:
         ret.front()+=":You have not registered\n";
         break;
@@ -90,11 +96,17 @@ void Client::reply(const ERR&err)const{
 void Client::reply(const ERR&err,cstr&param)const{
     vector<str> ret(1,resp.header(err));
     switch(err){
+      case ERR_NOSUCHNICK:
+        ret.front()+=param+" :No such nick/channel\n";
+        break;
       case ERR_NOSUCHCHANNEL:
         ret.front()+=param+" :No such channel\n";
         break;
       case ERR_UNKNOWNCOMMAND:
         ret.front()+=param+" :Unknown command\n";
+        break;
+      case ERR_NICKCOLLISION:
+        ret.front()+=param+" :Nickname collision KILL\n";
         break;
       case ERR_NOTONCHANNEL:
         ret.front()+=param+" :You're not on that channel\n";

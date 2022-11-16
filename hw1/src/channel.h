@@ -23,6 +23,7 @@ public:
     void erase(cstr&);
     cstr info()const;
     cstr names()const;
+    void broadcast(cstr&,cstr&)const;
 };
 
 #endif
