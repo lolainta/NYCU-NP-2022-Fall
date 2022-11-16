@@ -15,13 +15,14 @@
 
 using namespace std;
 using str=string;
+using cstr=const string;
 
 #include"client.h"
 #include"channel.h"
 
 #define inv(x) {x=true;break;}
 
-vector<str> split(const str&inp){
+vector<str> split(cstr&inp){
     stringstream ss(inp);
     str tmp;
     vector<str> ret;
@@ -48,6 +49,14 @@ vector<str> merge(const vector<str>&org){
     return ret;
 }
 
+vector<Channel>::iterator addCh(vector<Channel>&chs,cstr&chname){
+    for(auto it=chs.begin();it!=chs.end();++it)
+        if(it->name==chname)
+            return it;
+    chs.emplace_back(chname);
+    return prev(chs.end());
+}
+
 int main(int argc,char**argv){
     int server_port=stoi(argv[1]);
     struct sockaddr_in servaddr;
@@ -61,6 +70,7 @@ int main(int argc,char**argv){
         perror(to_string(__LINE__).c_str());
 
     vector<Client> clients;
+    vector<Channel> channels;
     
     const int buf_size=65536;
     char read_buf[buf_size];
@@ -100,8 +110,10 @@ int main(int argc,char**argv){
                     continue;
                 bool invalid=false;;
                 if(inp[0]=="NICK"){
-                    if(inp.size()!=2)
-                        cout<<"Too many arguments, only take the first one"<<endl;
+                    if(inp.size()<2){
+                        cout<<"Not enough argument, but no return!\n";
+                        continue;
+                    }
                     cli.set_nick(inp[1]);
                     cli.reg();
                 }else if(inp[0]=="USER"){
@@ -119,14 +131,42 @@ int main(int argc,char**argv){
                     cli.reply("PONG "+inp[1]+'\n');
                 }else if(inp[0]=="LIST"){
                     
-                }else if(inp[0]=="JOIN"){
                     
+                }else if(inp[0]=="JOIN"){
+                    if(!cli.reg()){
+                        cli.reply(ERR::ERR_NOTREGISTERED);
+                        break;
+                    }
+                    if(inp.size()<2){
+                        cli.reply(ERR::ERR_NEEDMOREPARAMS,"JOIN");
+                        break;
+                    }
+                    if(inp[1].front()!='#'){
+                        cli.reply(ERR::ERR_NOSUCHCHANNEL,inp[1]);
+                        break;
+                    }
+                    auto ch=addCh(channels,inp[1]);
+                    cli.set_channel(ch);
+                    ch->add_user(&cli);
+                    cli.reply(RPL::RPL_TOPIC);
                 }else if(inp[0]=="TOPIC"){
+                     if(!cli.reg()){
+                        cli.reply(ERR::ERR_NOTREGISTERED);
+                        break;
+                    }
                     
                 }else if(inp[0]=="NAMES"){
-                    
+                      if(!cli.reg()){
+                        cli.reply(ERR::ERR_NOTREGISTERED);
+                        break;
+                    }
+                   
                 }else if(inp[0]=="PART"){
-                    
+                       if(!cli.reg()){
+                        cli.reply(ERR::ERR_NOTREGISTERED);
+                        break;
+                    }
+                  
                 }else if(inp[0]=="USERS"){
                     if(!cli.reg()){
                         cli.reply(ERR::ERR_NOTREGISTERED);
@@ -138,7 +178,11 @@ int main(int argc,char**argv){
                     cli.reply(RPL::RPL_ENDOFUSERS);
                     
                 }else if(inp[0]=="PRIVMSG"){
-                    
+                        if(!cli.reg()){
+                        cli.reply(ERR::ERR_NOTREGISTERED);
+                        break;
+                    }
+                 
                 }else if(inp[0]=="QUIT"){
                     cout<<cli.disconnected()<<endl;
                 }else{

@@ -1,13 +1,24 @@
-#include<string>
+#ifndef CHANNEL_H
+#define CHANNEL_H
+
+#include <string>
+#include <vector>
+
+#include "client.h"
 
 using namespace std;
 using str=string;
+using cstr=const str;
 
 class Channel{
-public:
-    int id;
-    int cnt;
-    str name;
+private:
+    vector<Client*> clis;
     str topic;
-    Channel(int);
+public:
+    Channel(cstr&);
+    str name;
+    void add_user(Client*);
+    cstr get_topic()const;
 };
+
+#endif
