@@ -14,9 +14,9 @@ cstr Channel::get_topic()const{
     return this->topic;
 }
 
-void Channel::erase(Client*cptr){
+void Channel::erase(cstr&cname){
     for(auto it=clis.begin();it!=clis.end();++it)
-        if((Client*)&(*it)==cptr)
+        if((*it)->get_nick()==cname)
             return clis.erase(it),void();
 }
 
@@ -25,5 +25,13 @@ cstr Channel::info()const{
     ret+=name+' ';
     ret+=to_string(clis.size())+' ';
     ret+=":"+topic;
+    return ret+'\n';
+}
+
+cstr Channel::names()const{
+    str ret;
+    ret+=name+" :";
+    for(auto cli:clis)
+        ret+=cli->get_nick()+' ';
     return ret+'\n';
 }

@@ -6,6 +6,7 @@
 
 using namespace std;
 using str=string;
+using cstr=const string;
 
 class Channel;
 
@@ -14,24 +15,25 @@ private:
     Response resp;
     str nick,username;
     str hostname,servername,realname;
-    const str fixl(const str&,const size_t&)const;
+    cstr fixl(cstr&,const size_t&)const;
 public:
     int id,fd;
     str ip,port;
     Channel*ch;
     Client(int);
     void reply(const RPL&)const;
-    void reply(const RPL&,const str&)const;
+    void reply(const RPL&,cstr&)const;
     void reply(const ERR&)const;
-    void reply(const ERR&,const str&)const;
-    void reply(const str&)const;
-    void set_nick(const str&);
-    void set_name(const str&,const str&,const str&,const str&);
+    void reply(const ERR&,cstr&)const;
+    void reply(cstr&)const;
+    void set_nick(cstr&);
+    void set_name(cstr&,cstr&,cstr&,cstr&);
     void set_channel(Channel*);
-    const str info()const;
-    const str information()const;
-    const str connected()const;
-    const str disconnected();
+    cstr get_nick()const;
+    cstr info()const;
+    cstr information()const;
+    cstr connected()const;
+    cstr disconnected();
     const bool notreg()const;
     bool reg()const;
 };

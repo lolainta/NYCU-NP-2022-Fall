@@ -52,11 +52,17 @@ void Client::reply(const RPL&rpl)const{
     this->resp.reply(ret);
 }
 
-void Client::reply(const RPL&rpl,const str&param)const{
+void Client::reply(const RPL&rpl,cstr&param)const{
     vector<str> ret(1,resp.header(rpl));
     switch(rpl){
       case RPL_LIST:
         ret.front()+=param;
+        break;
+      case RPL_NAMREPLY:
+        ret.front()+=param;
+        break;
+      case RPL_ENDOFNAMES:
+        ret.front()+=param+" :End of /NAMES list\n";
         break;
       case RPL_USERS:
         ret.front()+=param;
@@ -81,7 +87,7 @@ void Client::reply(const ERR&err)const{
     this->resp.reply(ret);
 }
 
-void Client::reply(const ERR&err,const str&param)const{
+void Client::reply(const ERR&err,cstr&param)const{
     vector<str> ret(1,resp.header(err));
     switch(err){
       case ERR_NOSUCHCHANNEL:
@@ -102,16 +108,16 @@ void Client::reply(const ERR&err,const str&param)const{
     this->resp.reply(ret);
 }
 
-void Client::reply(const str&msg)const{
+void Client::reply(cstr&msg)const{
     this->resp.reply(vector<str>(1,msg));
 }
 
 
-void Client::set_nick(const str&_nick){
+void Client::set_nick(cstr&_nick){
     this->nick=_nick;
 }
 
-void Client::set_name(const str&uname,const str&hname,const str&sname,const str&rname){
+void Client::set_name(cstr&uname,cstr&hname,cstr&sname,cstr&rname){
     this->username=uname;
     this->servername=sname;
     this->hostname=hname;
@@ -123,19 +129,23 @@ void Client::set_channel(Channel*ptr){
     this->ch=ptr;
 }
 
-const str Client::fixl(const str&s,const size_t&len)const{
+cstr Client::get_nick()const{
+    return this->nick;
+}
+
+cstr Client::fixl(cstr&s,const size_t&len)const{
     if(s.size()>len)
         return s;
     return str(len-s.size(),' ')+s;
 }
 
-const str Client::info()const{
+cstr Client::info()const{
     str ret;
     ret+=':'+fixl(this->nick,8)+' '+fixl("-",9)+' '+fixl(this->ip,8);
     return ret+'\n';
 }
 
-const str Client::information()const{
+cstr Client::information()const{
     str ret;
     ret+=to_string(this->id)+'\t';
     ret+="name: "+this->username+'\t';
@@ -144,13 +154,13 @@ const str Client::information()const{
     return ret;
 }
 
-const str Client::connected()const{
+cstr Client::connected()const{
     str ret("User connected!!\t");
     ret+=this->information();
     return ret;
 }
 
-const str Client::disconnected(){
+cstr Client::disconnected(){
     str ret("User disconnected!!\t");
     ret+=this->information();
     close(this->fd);

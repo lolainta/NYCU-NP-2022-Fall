@@ -144,21 +144,19 @@ int main(int argc,char**argv){
                         cli.reply(ERR::ERR_NOTREGISTERED);
                         break;
                     }
+                    cli.reply(RPL::RPL_LISTSTART);
                     if(inp.size()==1){
-                        cli.reply(RPL::RPL_LISTSTART);
                         for(auto ch:channels)
                             cli.reply(RPL::RPL_LIST,ch.info());
-                        cli.reply(RPL::RPL_LISTEND);
                     }else{
                         auto ch=getCh(channels,inp[1]);
                         if(inp[1].front()!='#' or !ch){
                             cli.reply(ERR::ERR_NOSUCHCHANNEL,inp[1]);
                             break;
                         }
-                        cli.reply(RPL::RPL_LISTSTART);
                         cli.reply(RPL::RPL_LIST,ch->info());
-                        cli.reply(RPL::RPL_LISTEND);
                     }
+                    cli.reply(RPL::RPL_LISTEND);
                 }else if(inp[0]=="JOIN"){
                     if(cli.notreg()){
                         cli.reply(ERR::ERR_NOTREGISTERED);
@@ -209,7 +207,20 @@ int main(int argc,char**argv){
                         cli.reply(ERR::ERR_NOTREGISTERED);
                         break;
                     }
-                   
+                    if(inp.size()==1){
+                        for(auto ch:channels){
+                            cli.reply(RPL::RPL_NAMREPLY,ch.names());
+                            cli.reply(RPL::RPL_ENDOFNAMES,ch.name);
+                        }
+                    }else{
+                        auto ch=getCh(channels,inp[1]);
+                        if(inp[1].front()!='#' or !ch){
+                            cli.reply(ERR::ERR_NOSUCHCHANNEL,inp[1]);
+                            break;
+                        }
+                        cli.reply(RPL::RPL_NAMREPLY,ch->names());
+                        cli.reply(RPL::RPL_ENDOFNAMES,ch->name);
+                    }
                 }else if(inp[0]=="PART"){
                     if(cli.notreg()){
                         cli.reply(ERR::ERR_NOTREGISTERED);
@@ -227,7 +238,7 @@ int main(int argc,char**argv){
                         cli.reply(ERR::ERR_NOTONCHANNEL,inp[1]);
                         break;
                     }
-                    cli.ch->erase(&cli);
+                    cli.ch->erase(cli.get_nick());
                     cli.ch=nullptr;
                 }else if(inp[0]=="USERS"){
                     if(cli.notreg()){
