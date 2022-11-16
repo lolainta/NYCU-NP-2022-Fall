@@ -1,170 +1,89 @@
 #include<iostream>
 #include<vector>
 #include<cassert>
-#include<string>
-#include<string.h>
-#include<signal.h>
-#include<memory>
+#include<cstring>
 #include<unistd.h>
-#include<fcntl.h>
 #include<arpa/inet.h>
-#include<sys/socket.h>
-#include<netinet/in.h>
 #include<chrono>
-//#include<libexplain/read.h>
-
-#define memset(...)
 
 using namespace std;
 using str=string;
+using cstr=const str;
 
 typedef struct client{
     int id,fd;
-    str name;
     str ip,port;
     bool cmd=true;
-    client(int _id,bool _cmd=true){
-        id=_id;
-        name="";
-        for(int i=0;i<19;++i)
-            name+=(char)(rand()%26+'a');
-        cmd=_cmd;
+    client(int _id,bool _cmd,int lfd):id(_id),cmd(_cmd){
+        struct sockaddr_in cliaddr;
+        socklen_t clilen=sizeof(cliaddr);
+        fd=accept(lfd,(struct sockaddr*)&cliaddr,(socklen_t*)&clilen);
+        port=to_string(htons(cliaddr.sin_port));
+        ip=(inet_ntoa(cliaddr.sin_addr));
     }
 }Client;
 
-void announce(const vector<Client>&clis,str msg,int id){
-    msg+='\0';
-    char*buf=(char*)malloc(1024);
-    memset(buf,0,sizeof(buf));
-    strncpy(buf,msg.c_str(),msg.size());
-	for(const auto&x:clis)
-        if(x.id!=id and x.fd!=-1)
-            write(x.fd,buf,msg.size());
-    free(buf);
-    return;
+cstr disconnect(Client&x){
+    return "* client "+x.ip+":"+x.port+" disconnected\n";
 }
 
-const str disconnect(Client&x){
-    str ret="* client "+x.ip+":"+x.port+" disconnected\n";
-    return ret;
-}
-
-const str connect(Client&x){
-    str ret="* client connected from "+x.ip+":"+x.port+"\n";
-    return ret;
-}
-
-const str time(){
-    time_t now=time(0);
-    struct tm tstruct;
-    char buf[128];
-    tstruct=*localtime(&now);
-    strftime(buf,sizeof(buf),"%Y-%m-%d %X ",&tstruct);
-    return buf;
-}
-
-const str prompt(const str&role){
-    if(role=="\0")
-        return time()+"*** ";
-    return time()+"<"+role+"> ";
-}
-
-const str banner(int size,str name){
-	str ret=prompt("\0")+"Welcome to the simple CHAT server\n";
-	ret+=prompt("\0")+"Total "+to_string(size)+" users online now. Your name is <"+name+">\n";
-	return ret;
-}
-
-const str who(const vector<Client> clis,int id){
-    str ret;
-    ret+="--------------------------------------------------\n";
-    for(auto&cli:clis)
-        ret+=(id==cli.id?"* ":"  ")+cli.name+"\t\t"+cli.ip+":"+cli.port+"\n";
-    ret+="--------------------------------------------------\n";
-    return ret;
-}
-
-const str online(const str&name){
-    str ret;
-    ret+="User <"+name+"> has just landed on the server\n";
-    return ret;
-}
-
-const str offline(const str&name){
-    str ret;
-    ret+="User <"+name+"> has left the server\n";
-    return ret;
-}
-
-const str change(const str&org,const str&nxt,bool user=false){
-    str ret;
-    if(!user)
-        ret+="User <"+org+"> renamed to <"+nxt+">\n";
-    else
-        ret+="Nickname changed to <"+nxt+">\n";
-    return ret;
-}
-
-const str nocmd(const str&err){
-    str ret;
-    ret+="Unknown or incomplete command <"+err+">\n";
-    return ret;
-}
-
-const str text(const str&sender,const str&msg){
-    str ret;
-    ret+=prompt(sender)+msg;
-    return ret;
+cstr connect(Client&x){
+    return "* client connected from "+x.ip+":"+x.port+" to "+(x.cmd?"control":"sink")+"\n";
 }
 
 int counter=0;
 
-const uint32_t gettime(){
+const uint64_t gettime(){
     using namespace std::chrono;
-    return static_cast<uint32_t>(duration_cast<milliseconds>(
+    return static_cast<uint64_t>(duration_cast<milliseconds>(
             system_clock::now().time_since_epoch()).count());
 }
-int last=0;
-const str reset(){
-    last=gettime();
-    str ret=to_string((int)gettime())+" RESET "+to_string(counter)+"\n";
+
+cstr stime(uint64_t time){
+    auto sec=time/1000;
+    auto msec=time%1000;
+    return to_string(sec)+'.'+to_string(msec)+'s';
+}
+
+cstr reset(){
+    str ret=stime(gettime())+" RESET "+to_string(counter)+"\n";
     counter=0;
     return ret;
 }
-const str ping(){
-    return to_string((int)gettime())+" PONG\n";
+cstr ping(){
+    return stime(gettime())+" PONG\n";
 }
 
-const str report(){
+cstr report(uint64_t&last){
     auto cur=gettime();
-    str ret=to_string(gettime())+" REPORT "+to_string(counter)+' ';
-    auto interval=cur-last;
-    ret+=to_string(interval/1000)+"s ";
-    ret+=to_string((long double)counter/(long double)interval);
+    auto elaps=cur-last;
+    str ret=stime(gettime())+" REPORT "+to_string(counter)+' ';
+    ret+=stime(elaps)+' ';
+    ret+=to_string((long double)counter/(long double)elaps);
     ret+="Mpbs\n";
-    last=cur;
     return ret;
 }
 
-const str client(const vector<Client> clis){
+cstr client(const vector<Client> clis){
     int num=0;
-    for(auto c:clis)
-        if(!c.cmd)
-            num++;
-    return to_string(gettime())+" CLIENTS "+to_string(num)+"\n";
+    for(auto c:clis)if(!c.cmd)
+        num++;
+    return stime(gettime())+" CLIENTS "+to_string(num)+"\n";
 }
 
 int main(int argc,char**argv){
     int server_port=stoi(argv[1]);
     int sink_port=server_port+1;
-    struct sockaddr_in servaddr,sinkaddr,cliaddr;
+    struct sockaddr_in servaddr,sinkaddr;
     int listenfd=socket(AF_INET,SOCK_STREAM,0);
     int listenfd_sink=socket(AF_INET,SOCK_STREAM,0);
+
     servaddr.sin_family=AF_INET;
     servaddr.sin_addr.s_addr=htonl(INADDR_ANY);
     servaddr.sin_port=htons(server_port);
     bind(listenfd,(struct sockaddr*)&servaddr,sizeof(servaddr));
     listen(listenfd,4096);
+
     sinkaddr.sin_family=AF_INET;
     sinkaddr.sin_addr.s_addr=htonl(INADDR_ANY);
     sinkaddr.sin_port=htons(sink_port);
@@ -173,17 +92,13 @@ int main(int argc,char**argv){
 
     vector<Client> clients;
     
-    last=gettime();
+    uint64_t last=gettime();
     int cnt=0;
-    const int buf_size=65536;
-    char sink_buf[buf_size];
+    const size_t buf_size=65536;
     char read_buf[buf_size];
-    char write_buf[buf_size];
-    signal(SIGPIPE,SIG_IGN);
+//    signal(SIGPIPE,SIG_IGN);
     while(1){
-        memset(sink_buf,0,buf_size);
         memset(read_buf,0,buf_size);
-        memset(write_buf,0,buf_size);
         int maxfd=max(listenfd,listenfd_sink);
         fd_set rset;
         FD_ZERO(&rset);
@@ -196,27 +111,16 @@ int main(int argc,char**argv){
         int nready=select(maxfd+1,&rset,nullptr,nullptr,nullptr);
         assert(nready);
         if(FD_ISSET(listenfd,&rset)){
-            Client cur(cnt++,true);
-            struct sockaddr_in cliaddr;
-            socklen_t clilen=sizeof(cliaddr);
-            cur.fd=accept(listenfd,(struct sockaddr*)&cliaddr,(socklen_t*)&clilen);
-            cur.port=to_string(htons(cliaddr.sin_port));
-            cur.ip=(inet_ntoa(cliaddr.sin_addr));
+            Client cur(cnt++,true,listenfd);
             clients.push_back(cur);
             assert(clients.size()<=FD_SETSIZE);
-
             cout<<connect(cur);
-            continue;
         }
         if(FD_ISSET(listenfd_sink,&rset)){
-            Client cur(cnt++,false);
-            struct sockaddr_in cliaddr;
-            socklen_t clilen=sizeof(cliaddr);
-            cur.fd=accept(listenfd_sink,(struct sockaddr*)&cliaddr,(socklen_t*)&clilen);
-            cur.port=to_string(htons(cliaddr.sin_port));
-            cur.ip=(inet_ntoa(cliaddr.sin_addr));
+            Client cur(cnt++,false,listenfd_sink);
             clients.push_back(cur);
             assert(clients.size()<=FD_SETSIZE);
+            cout<<connect(cur);
         }
         for(auto&cli:clients){
             if(cli.fd!=-1 and FD_ISSET(cli.fd,&rset)){
@@ -226,44 +130,24 @@ int main(int argc,char**argv){
                         readn=read(cli.fd,read_buf,1);
                     memset(read_buf,0,buf_size);
                     cout<<disconnect(cli);
-                    /*
-                    str msg=prompt("\0")+offline(cli.name);
-                    announce(clients,msg,cli.id);
-                    */
                     assert(cli.fd!=listenfd);
                     close(cli.fd);
                     cli.fd=-1;
                 }else{
                     if(cli.cmd and read_buf[0]=='/'){
                         if(!strncmp(read_buf,"/reset\n",7)){
-                            str msg;
-                            msg=reset();
-                            strcpy(write_buf,msg.c_str());
-                            write(cli.fd,write_buf,msg.size());
+                            str msg(reset());
+                            write(cli.fd,msg.c_str(),msg.size());
                         }else if(!strncmp(read_buf,"/ping\n",6)){
-                            str msg;
-                            msg=ping();
-                            strcpy(write_buf,msg.c_str());
-                            write(cli.fd,write_buf,msg.size());
+                            str msg(ping());
+                            write(cli.fd,msg.c_str(),msg.size());
                         }else if(!strncmp(read_buf,"/report\n",8)){
-                            str msg;
-                            msg=report();
-                            strcpy(write_buf,msg.c_str());
-                            write(cli.fd,write_buf,msg.size());
+                            str msg(report(last));
+                            write(cli.fd,msg.c_str(),msg.size());
                         }else if(!strncmp(read_buf,"/clients\n",9)){
-                            str msg;
-                            msg=client(clients);
-                            strcpy(write_buf,msg.c_str());
-                            write(cli.fd,write_buf,msg.size());
+                            str msg(client(clients));
+                            write(cli.fd,msg.c_str(),msg.size());
                         }else{
-                            str msg;
-                            str err(read_buf);
-                            for(int i=0;i<err.size();++i)
-                                if(err[i]=='\n')
-                                    err.erase(err.begin()+i,err.end());
-                            msg=prompt("\0")+nocmd(err);
-                            strcpy(write_buf,msg.c_str());
-                            write(cli.fd,write_buf,msg.size());
                             assert(0);
                         }
                     }else if(cli.cmd){
@@ -277,10 +161,8 @@ int main(int argc,char**argv){
         }
 
         for(int i=clients.size()-1;i>=0;--i)
-            if(clients[i].fd==-1){
-                assert(i<clients.size());
+            if(clients[i].fd==-1)
                 clients.erase(clients.begin()+i);
-            }
     }
     return 0;
 }
