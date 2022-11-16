@@ -21,6 +21,7 @@ public:
     void set_topic(cstr&);
     cstr get_topic()const;
     void erase(Client*);
+    cstr info()const;
 };
 
 #endif

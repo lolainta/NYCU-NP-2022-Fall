@@ -19,3 +19,11 @@ void Channel::erase(Client*cptr){
         if((Client*)&(*it)==cptr)
             return clis.erase(it),void();
 }
+
+cstr Channel::info()const{
+    str ret;
+    ret+=name+' ';
+    ret+=to_string(clis.size())+' ';
+    ret+=":"+topic;
+    return ret+'\n';
+}

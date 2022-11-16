@@ -16,6 +16,12 @@ Client::Client(int listenfd):ch(nullptr){
 void Client::reply(const RPL&rpl)const{
     vector<str> ret(1,resp.header(rpl));
     switch(rpl){
+      case RPL::RPL_LISTSTART:
+        ret.front()+="Channel :Users  Name\n";
+        break;
+      case RPL::RPL_LISTEND:
+        ret.front()+=":End of /LIST\n";
+        break;
       case RPL::RPL_NOTOPIC:
         ret.front()+=this->ch->name+" :No topic is set\n";
         break;
@@ -49,6 +55,9 @@ void Client::reply(const RPL&rpl)const{
 void Client::reply(const RPL&rpl,const str&param)const{
     vector<str> ret(1,resp.header(rpl));
     switch(rpl){
+      case RPL_LIST:
+        ret.front()+=param;
+        break;
       case RPL_USERS:
         ret.front()+=param;
         break;
@@ -77,6 +86,9 @@ void Client::reply(const ERR&err,const str&param)const{
     switch(err){
       case ERR_NOSUCHCHANNEL:
         ret.front()+=param+" :No such channel\n";
+        break;
+      case ERR_UNKNOWNCOMMAND:
+        ret.front()+=param+" :Unknown command\n";
         break;
       case ERR_NOTONCHANNEL:
         ret.front()+=param+" :You're not on that channel\n";

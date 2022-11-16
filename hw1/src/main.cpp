@@ -47,7 +47,7 @@ vector<str> merge(const vector<str>&org){
         ret.push_back(org[i]); 
     }
     for(;i<org.size();++i)
-        ret.back()+=org[i];
+        ret.back()+=' '+org[i];
     return ret;
 }
 
@@ -119,7 +119,6 @@ int main(int argc,char**argv){
                 cout<<endl<<flush;
                 if(inp.empty())
                     continue;
-                bool invalid=false;;
                 if(inp[0]=="NICK"){
                     if(inp.size()<2){
                         cout<<"Not enough argument, but no return!\n";
@@ -141,8 +140,25 @@ int main(int argc,char**argv){
                     }
                     cli.reply("PONG "+inp[1]+'\n');
                 }else if(inp[0]=="LIST"){
-                    
-                    
+                    if(cli.notreg()){
+                        cli.reply(ERR::ERR_NOTREGISTERED);
+                        break;
+                    }
+                    if(inp.size()==1){
+                        cli.reply(RPL::RPL_LISTSTART);
+                        for(auto ch:channels)
+                            cli.reply(RPL::RPL_LIST,ch.info());
+                        cli.reply(RPL::RPL_LISTEND);
+                    }else{
+                        auto ch=getCh(channels,inp[1]);
+                        if(inp[1].front()!='#' or !ch){
+                            cli.reply(ERR::ERR_NOSUCHCHANNEL,inp[1]);
+                            break;
+                        }
+                        cli.reply(RPL::RPL_LISTSTART);
+                        cli.reply(RPL::RPL_LIST,ch->info());
+                        cli.reply(RPL::RPL_LISTEND);
+                    }
                 }else if(inp[0]=="JOIN"){
                     if(cli.notreg()){
                         cli.reply(ERR::ERR_NOTREGISTERED);
@@ -232,10 +248,7 @@ int main(int argc,char**argv){
                 }else if(inp[0]=="QUIT"){
                     cout<<cli.disconnected()<<endl;
                 }else{
-                    invalid=true;
-                }
-                if(invalid){
-//                    cli.reply("Invalid Command!");
+                    cli.reply(ERR::ERR_UNKNOWNCOMMAND,inp[0]);
                 }
             }
         }
