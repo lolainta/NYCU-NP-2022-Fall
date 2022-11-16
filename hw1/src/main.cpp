@@ -22,8 +22,6 @@ using cstr=const string;
 
 const vector<Channel>::iterator nullit;
 
-#define inv(x) {x=true;break;}
-
 vector<str> split(cstr&inp){
     stringstream ss(inp);
     str tmp;
@@ -150,7 +148,7 @@ int main(int argc,char**argv){
                             cli.reply(RPL::RPL_LIST,ch.info());
                     }else{
                         auto ch=getCh(channels,inp[1]);
-                        if(inp[1].front()!='#' or !ch){
+                        if(!ch){
                             cli.reply(ERR::ERR_NOSUCHCHANNEL,inp[1]);
                             break;
                         }
@@ -181,6 +179,9 @@ int main(int argc,char**argv){
                         cli.reply(RPL::RPL_TOPIC);
                     else
                         cli.reply(RPL::RPL_NOTOPIC);
+                    cli.reply(RPL::RPL_NAMREPLY,ch->names());
+                    cli.reply(RPL::RPL_ENDOFNAMES,ch->name);
+
                 }else if(inp[0]=="TOPIC"){
                     if(cli.notreg()){
                         cli.reply(ERR::ERR_NOTREGISTERED);
@@ -214,7 +215,7 @@ int main(int argc,char**argv){
                         }
                     }else{
                         auto ch=getCh(channels,inp[1]);
-                        if(inp[1].front()!='#' or !ch){
+                        if(!ch){
                             cli.reply(ERR::ERR_NOSUCHCHANNEL,inp[1]);
                             break;
                         }
@@ -230,8 +231,8 @@ int main(int argc,char**argv){
                         cli.reply(ERR::ERR_NEEDMOREPARAMS,"PART");
                         break;
                     }
-                    if(inp[1].front()!='#' or !getCh(channels,inp[1])){
-                        cli.reply(ERR::ERR_NOSUCHCHANNEL,"PART");
+                    if(!getCh(channels,inp[1])){
+                        cli.reply(ERR::ERR_NOSUCHCHANNEL,inp[1]);
                         break;
                     }
                     if(cli.ch==nullptr or cli.ch->name!=inp[1]){
@@ -246,8 +247,8 @@ int main(int argc,char**argv){
                         break;
                     }
                     cli.reply(RPL::RPL_USERSSTART);
-                    for(auto cli:clients)
-                        cli.reply(RPL::RPL_USERS,cli.info());
+                    for(auto clients:clients)
+                        cli.reply(RPL::RPL_USERS,clients.info());
                     cli.reply(RPL::RPL_ENDOFUSERS);
                     
                 }else if(inp[0]=="PRIVMSG"){
@@ -255,6 +256,16 @@ int main(int argc,char**argv){
                         cli.reply(ERR::ERR_NOTREGISTERED);
                         break;
                     }
+                    if(inp.size()<3){
+                        cli.reply(ERR::ERR_NEEDMOREPARAMS,"PRIVMSG");
+                        break;
+                    }
+                    inp=merge(inp);
+                    if(!getCh(channels,inp[1])){
+                        cli.reply(ERR::ERR_NOSUCHCHANNEL,inp[1]);
+                        break;
+                    }
+
                  
                 }else if(inp[0]=="QUIT"){
                     cout<<cli.disconnected()<<endl;

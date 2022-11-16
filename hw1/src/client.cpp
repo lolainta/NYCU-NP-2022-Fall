@@ -176,6 +176,7 @@ bool Client::reg()const{
     if(this->notreg()){
         return false;
     }else{
+        this->reply(":"+this->resp.server+" 001 "+this->nick+" :Welcome to the minimized IRC daemon!\n");
         this->reply(RPL::RPL_MOTDSTART);
         this->reply(RPL::RPL_MOTD);
         this->reply(RPL::RPL_ENDOFMOTD);
