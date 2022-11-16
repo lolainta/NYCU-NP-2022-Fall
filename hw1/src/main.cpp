@@ -174,6 +174,7 @@ int main(int argc,char**argv){
                         ch=&channels.back();
                     }
                     cli.set_channel(ch);
+                    ch->erase(cli.get_nick());
                     ch->add_user(&cli);
                     if(ch->get_topic()!="")
                         cli.reply(RPL::RPL_TOPIC);
