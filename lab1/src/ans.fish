@@ -1,4 +1,5 @@
-# fish nc.fish &
+#!/usr/bin/fish
+fish nc.fish &
 while true
     python3 sol.py
     set res $status
