@@ -78,6 +78,8 @@ void Client::reply(const ERR&err)const{
       case ERR_NOORIGIN:
         ret.front()+=":No origin specified\n";
         break;
+      case ERR_NORECIPIENT:
+        ret.front()+=":No recipient given (PRIVMSG)\n";
       case ERR_NOTEXTTOSEND:
         ret.front()+=":No text to send\n";
         break;

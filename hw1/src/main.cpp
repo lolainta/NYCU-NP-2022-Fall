@@ -266,11 +266,11 @@ int main(int argc,char**argv){
                         break;
                     }
                     if(inp.size()==1){
-                        cli.reply(ERR::ERR_NOTEXTTOSEND);
+                        cli.reply(ERR::ERR_NORECIPIENT);
                         break;
                     }
                     if(inp.size()==2){
-                        cli.reply(ERR::ERR_NOSUCHCHANNEL,inp[1]);
+                        cli.reply(ERR::ERR_NOTEXTTOSEND);
                         break;
                     }
                     inp=merge(inp);
