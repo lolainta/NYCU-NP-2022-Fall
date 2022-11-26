@@ -1,0 +1,35 @@
+version: "3.9"
+services:
+  lab4-1:
+    build: .
+    environment:
+      - TEST_COMMAND=`which date`
+    ports:
+      - 10001:11111
+  lab4-2:
+    build: .
+    environment:
+      - TEST_COMMAND=date
+    ports:
+      - 10002:11111
+  lab4-3:
+    build: .
+    environment:
+      - TEST_COMMAND=/path/to/an/invalid/executable
+    ports:
+      - 10003:11111
+  lab4-4:
+    build: .
+    environment:
+      - TEST_COMMAND=ls -la /tmp /home /xxx
+    ports:
+      - 10004:11111
+  lab4-5:
+    build: .
+    environment:
+      - TEST_COMMAND=timeout 60 /bin/bash -c 'cd /; exec bash'
+    ports:
+      - 10005:11111
+  
+ 
+

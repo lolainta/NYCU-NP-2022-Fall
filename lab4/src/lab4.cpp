@@ -7,6 +7,7 @@
 #include<sys/socket.h>
 #include<sys/wait.h>
 #include<netinet/in.h>
+#include<unistd.h>
 
 using namespace std;
 
@@ -41,10 +42,12 @@ int main(int argc, char**argv){
         servaddr.sin_port=htons(server_port);
 
         signal(SIGCHLD,sig_chld);
-        bind(listenfd,(struct sockaddr*)&servaddr,sizeof(servaddr));
+        if(bind(listenfd,(struct sockaddr*)&servaddr,sizeof(servaddr))<0){
+	    perror("bind error:");
+	    exit(-1);
+	}
         listen(listenfd,3);
 
-        int cnt=0;
         while(1){
             clilen=sizeof(cliaddr);
             connfd=accept(listenfd,(struct sockaddr*)&cliaddr,&clilen);
