@@ -117,7 +117,7 @@ const str text(const str&sender,const str&msg){
 
 int main(int argc,char**argv){
     int server_port=stoi(argv[1]);
-    struct sockaddr_in servaddr,cliaddr;
+    struct sockaddr_in servaddr;
     int listenfd=socket(AF_INET,SOCK_STREAM,0);
     servaddr.sin_family=AF_INET;
     servaddr.sin_addr.s_addr=htonl(INADDR_ANY);
@@ -207,7 +207,7 @@ int main(int argc,char**argv){
                         }else{
                             str msg;
                             str err(read_buf);
-                            for(int i=0;i<err.size();++i)
+                            for(int i=0;i<(int)err.size();++i)
                                 if(err[i]=='\n')
                                     err.erase(err.begin()+i,err.end());
                             msg=prompt("\0")+nocmd(err);
@@ -217,7 +217,7 @@ int main(int argc,char**argv){
                     }else{
                         assert(read_buf[0]!='\0');
                         str message(read_buf);
-                        for(int i=0;i<message.size();++i)
+                        for(int i=0;i<(int)message.size();++i)
                             if(message[i]=='\n')
                                 message.erase(message.begin()+i+1,message.end());
                                 
@@ -229,9 +229,9 @@ int main(int argc,char**argv){
             }
         }
 
-        for(int i=clients.size()-1;i>=0;--i)
+        for(int i=(int)clients.size()-1;i>=0;--i)
             if(clients[i].fd==-1){
-                assert(i<clients.size());
+                assert(i<(int)clients.size());
                 clients.erase(clients.begin()+i);
             }
     }
