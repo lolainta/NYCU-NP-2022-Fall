@@ -1,0 +1,4 @@
+version: "3.9"
+services:
+  lab2:
+    build: .
