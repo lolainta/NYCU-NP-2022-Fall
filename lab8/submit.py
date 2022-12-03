@@ -20,6 +20,9 @@ def solve_pow():
     print(time.time(), "solving pow ...");
     solved = b''
     for i in range(1000000000):
+        if i % 1000000 == 0:
+            print(i,end='\r')
+            pass
         h = hashlib.sha1((prefix + str(i)).encode()).hexdigest();
         if h[:6] == '000000':
             solved = str(i).encode();
