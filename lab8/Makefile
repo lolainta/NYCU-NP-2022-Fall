@@ -6,8 +6,9 @@ TEST_DIR := ./test
 TEST_SRC_DIR := $(TEST_DIR)/src
 TEST_DEST_DIR := $(TEST_DIR)/dest
 
-_SRCS := server.cpp client.cpp
-SRCS := $(patsubst %.cpp,$(SRC_DIR)/%.cpp,$(_SRCS))
+_OBJS := response.o request.o
+OBJS := $(patsubst %.o,$(BUILD_DIR)/%.o,$(_OBJS))
+
 
 CXX=g++
 CPPFLAGS=-O3 -g -Wall -std=c++17 -static
@@ -20,12 +21,15 @@ all:
 	make $(BUILD_DIR)/server
 	make $(BUILD_DIR)/client
 
+$(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CPPFLAGS) -c $< -o $@
 
-$(BUILD_DIR)/server: $(SRC_DIR)/server.cpp
-	$(CXX) $(SRC_DIR)/server.cpp $(CPPFLAGS) -o $(BUILD_DIR)/server
+$(BUILD_DIR)/server: $(BUILD_DIR)/server.o $(OBJS)
+	$(CXX) $(BUILD_DIR)/server.o $(OBJS) $(CPPFLAGS) -o $(BUILD_DIR)/server
 
-$(BUILD_DIR)/client: $(SRC_DIR)/client.cpp
-	$(CXX) $(SRC_DIR)/client.cpp $(CPPFLAGS) -o $(BUILD_DIR)/client
+$(BUILD_DIR)/client: $(BUILD_DIR)/client.o $(OBJS)
+	$(CXX) $(BUILD_DIR)/client.o $(OBJS) $(CPPFLAGS) -o $(BUILD_DIR)/client
 
 check:
 	@md5sum $(TEST_SRC_DIR)/* | cut -d ' ' -f 1 > $(BUILD_DIR)/src.txt
