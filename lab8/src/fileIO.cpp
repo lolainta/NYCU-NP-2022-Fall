@@ -1,10 +1,11 @@
+#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <set>
 #include <string>
 #include <vector>
-#include <algorithm>
+#include <string.h>
 
 #define PAYLOAD_SIZE 33554432
 
@@ -45,15 +46,23 @@ class fileIO {
         sort(filenames.begin(), filenames.end());
 
         int contentCounter = 0;
-        
+
         for (int i = 0; i < 1000; ++i) {
             // If num of files is less than 1000, set entries to 0;
             if (i < filenames.size()) {
+                cout << this->filenames[i] << endl;
                 filesystem::directory_entry file(this->filenames[i]);
 
                 this->payload->fileEntries[i].contentOffset = contentCounter;
                 this->payload->fileEntries[i].size = file.file_size();
                 this->payload->fileEntries[i].checksum = 0;
+
+                ifstream fin(this->filenames[i]);
+                fin.read((char *)(this->payload->content + contentCounter), file.file_size());
+
+                for (uint8_t *it = this->payload->content + contentCounter; it < this->payload->content + contentCounter + file.file_size(); it += 2) {
+                    this->payload->fileEntries[i].checksum ^= *(uint16_t *)it;
+                }
 
                 contentCounter += file.file_size();
             } else {
@@ -61,29 +70,25 @@ class fileIO {
                 this->payload->fileEntries[i].size = 0;
                 this->payload->fileEntries[i].checksum = 0;
             }
+            // cout << (char *)this->payload->content << endl;
         }
 
-        for (auto &it : this->filenames) {
-            cout << it.filename() << endl;
-            // payload->fileEntries
-        }
         return 0;
+    }
+    string getFile(int idx) {
+        char *tmp = (char *)malloc(this->payload->fileEntries[idx].size);
+        memcpy(tmp, (this->payload->content + this->payload->fileEntries[idx].contentOffset), this->payload->fileEntries[idx].size);
+        string ret(tmp);
+        return ret;
     }
 };
 
 int main() {
-    // for (auto &it : fsDirIter) {
-    //     cout << it.path().filename() << endl;
-    //     ifstream in(it.path(), ios::in | ios::binary);
-    //     void *data = calloc(1024, 1);
-    //     in.read((char *)data, 1024);
-    //     cout << (char *)data << endl << endl;
-    // }
-
     uint8_t *mem = (uint8_t *)malloc(PAYLOAD_SIZE);
 
     fileIO tmp(mem, PAYLOAD_SIZE);
     tmp.readFiles("/root/NYCU-NP-2022-Fall/lab6");
+    cout << tmp.getFile(1) << endl;
 
     return 0;
 }
