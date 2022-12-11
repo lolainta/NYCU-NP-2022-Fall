@@ -21,7 +21,7 @@
 #define cout cout<<"[Client]\t"
 
 int outCounter=0;
-const int wrap=40;
+const int wrap=1000;
 
 using str=std::string;
 using cstr=const str;
@@ -33,7 +33,7 @@ static timeval curtv;
 // static unsigned seq;
 static uint32_t base;
 
-const unsigned int RAW_DATA=33*1024*1024;
+const unsigned int RAW_DATA=32*1024*1024;
 const unsigned int DATA=(RAW_DATA/PAYLOAD+(bool)RAW_DATA%PAYLOAD)*PAYLOAD;
 
 vector<response> pkts;
@@ -86,7 +86,7 @@ void send_resp(const response&resp){
 }
 
 void send_cur(){
-    size_t wnd=8;
+    size_t wnd=512;
     if(outCounter++%wrap==0)
         cout<<"Send start from "<<base<<" to "<<min(base+wnd,pkts.size())<<endl;
     for(unsigned i=base;i<base+wnd and i<pkts.size();++i)
@@ -122,8 +122,8 @@ int main(int argc,char*argv[]) {
     uint8_t*data=(uint8_t*)calloc(DATA,1);
     cout<<"Start fileIO"<<endl;
     fileIO fio(data,DATA);
-    int tmp=fio.readFiles(source);
-    cout<<tmp<<endl;
+    int total=fio.readFiles(source);
+    cout<<total<<" bytes in total"<<endl;
     cout<<"FileIO end"<<endl;
     frag(data);
     cout<<"packet generated"<<endl;
@@ -153,10 +153,15 @@ int main(int argc,char*argv[]) {
             cout<<"Request checksum failed!"<<endl;
             continue;
         }
+        if(req.seq==20969){
+            cout<<req.seq<<" received!"<<endl;
+            break;
+        }
         if(outCounter++%wrap==0)
             cout<<curTime()<<" received "<<req.seq<<'/'<<pkts.size()<<' '<<100.0*req.seq/pkts.size()<<'%'<<endl;
         base=max(base,req.seq);
     }
+    cout<<"Last ACK got!"<<endl;
 
     close(sock);
 }
