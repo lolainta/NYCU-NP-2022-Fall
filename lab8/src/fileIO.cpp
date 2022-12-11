@@ -10,10 +10,6 @@
 
 using namespace std;
 
-string filePath = "/root/NYCU-NP-2022-Fall/lab6";
-// int totalFiles = 6;
-// int payloadSize = 33554432;
-
 fileIO::fileIO(uint8_t *payload, unsigned int payloadSize) {
     this->payload = (dataPayload *)payload;
     this->payloadSize = payloadSize;
@@ -34,23 +30,25 @@ int fileIO::readFiles(string filePath) {
     int contentCounter = 0;
 
     for (int i = 0; i < 1000; ++i) {
-        // If num of files is less than 1000, set entries to 0;
+        // If num of files is less than 1000, clear reminding entries.
         if (i < filenames.size()) {
-            cout << filenames[i] << endl;
             filesystem::directory_entry file(filenames[i]);
 
             this->payload->fileEntries[i].contentOffset = contentCounter;
             this->payload->fileEntries[i].size = file.file_size();
             this->payload->fileEntries[i].checksum = 0;
 
-            ifstream fin(filenames[i]);
-            fin.read((char *)(this->payload->content + contentCounter), file.file_size());
+            uint8_t *contentStart = this->payload->content + contentCounter;
 
-            for (uint8_t *it = this->payload->content + contentCounter; it < this->payload->content + contentCounter + file.file_size(); it += 2) {
+            ifstream fin(filenames[i]);
+            fin.read((char *)contentStart, file.file_size());
+
+            for (uint8_t *it = contentStart; it < contentStart + file.file_size(); it += 2) {
                 this->payload->fileEntries[i].checksum ^= *(uint16_t *)it;
             }
 
             contentCounter += file.file_size();
+            contentCounter += 16 - (contentCounter % 16);
         } else {
             this->payload->fileEntries[i].contentOffset = 0;
             this->payload->fileEntries[i].size = 0;
@@ -58,7 +56,7 @@ int fileIO::readFiles(string filePath) {
         }
     }
 
-    return 0;
+    return 8 + 64 * 1000 + contentCounter;
 }
 
 string fileIO::getFile(int idx) {
@@ -76,35 +74,31 @@ string fileIO::genFilename(int num) {
 }
 
 int fileIO::writeFiles(string filePath) {
+    int fileWritten = 0;
     for (int i = 0; i < 1000; ++i) {
-        // If num of files is less than 1000, set entries to 0;
+        // If num of files is less than 1000, break the loop.
         if (this->payload->fileEntries[i].size != 0) {
-            // cout << "[Writing file] " << this->filenames[i] << endl;
-
             uint16_t checksum = 0;
 
-            for (uint8_t *it = this->payload->content + this->payload->fileEntries[i].contentOffset; it < this->payload->content + this->payload->fileEntries[i].contentOffset + this->payload->fileEntries[i].size; it += 2) {
+            uint8_t *contentStart = this->payload->content + this->payload->fileEntries[i].contentOffset;
+
+            for (uint8_t *it = contentStart; it < contentStart + this->payload->fileEntries[i].size; it += 2) {
                 checksum ^= *(uint16_t *)it;
             }
 
             if (checksum != this->payload->fileEntries[i].checksum) {
-                cout << "File num " << i << "is broken.";
+                cout << "File num " << i << " is broken." << endl;
                 continue;
             }
 
             ofstream fOut(filePath + "/" + genFilename(i), ios::out | ios::binary);
-
-            fOut.write((char *)(this->payload->content + this->payload->fileEntries[i].contentOffset), this->payload->fileEntries[i].size);
-
+            fOut.write((char *)contentStart, this->payload->fileEntries[i].size);
             fOut.close();
-
-            this->payload->fileEntries[i].checksum = 0;
-
-        } else {
+            fileWritten++;
+        } else
             break;
-        }
     }
-    return 0;
+    return fileWritten;
 }
 
 int main() {
@@ -112,7 +106,7 @@ int main() {
 
     fileIO tmp(mem, PAYLOAD_SIZE);
     tmp.readFiles("/root/NYCU-NP-2022-Fall/lab6");
-    cout << tmp.getFile(1) << endl;
+    tmp.writeFiles("/root/NYCU-NP-2022-Fall/test");
 
     return 0;
 }
