@@ -26,7 +26,7 @@ int fileIO::readFiles(string filePath) {
     for (int i = 0; i < 1000; ++i) {
             // If num of files is less than 1000, set entries to 0;
         if (i < (int)filenames.size()) {
-            cout << this->filenames[i] << endl;
+            // cout << this->filenames[i] << endl;
             filesystem::directory_entry file(this->filenames[i]);
 
             this->payload->fileEntries[i].contentOffset = contentCounter;
@@ -49,7 +49,7 @@ int fileIO::readFiles(string filePath) {
         // cout << (char *)this->payload->content << endl;
     }
 
-    return 0;
+    return contentCounter;
 }
 
 string fileIO::getFile(int idx) {

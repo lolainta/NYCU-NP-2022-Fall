@@ -20,6 +20,9 @@
 
 #define cout cout<<"[Client]\t"
 
+int outCounter=0;
+const int wrap=40;
+
 using str=std::string;
 using cstr=const str;
 using namespace std;
@@ -28,23 +31,24 @@ static int sock=-1;
 static sockaddr_in sin;
 static timeval curtv;
 // static unsigned seq;
-static uint16_t cur;
+static uint32_t base;
 
 const unsigned int RAW_DATA=33*1024*1024;
-const unsigned int DATA=(RAW_DATA/PAYLOAD+(bool)RAW_DATA%PAYLOAD)*800;
+const unsigned int DATA=(RAW_DATA/PAYLOAD+(bool)RAW_DATA%PAYLOAD)*PAYLOAD;
 
 vector<response> pkts;
 
 void frag(uint8_t*data){
     vector<response>&ret=pkts;
-    uint16_t pid=1;
+    uint32_t pid=1;
     unsigned int num=DATA/PAYLOAD;
     assert(DATA%PAYLOAD==0);
+    assert(num<(1<<17)-1);
     for(unsigned i=0;i<num;++i)
         ret.emplace_back(pid++,data,i);
     assert(pkts.size()==(RAW_DATA/PAYLOAD+(bool)RAW_DATA%PAYLOAD));
     for(int i=0;i<(int)pkts.size();++i)
-        assert(pkts[i].seq==1+i);
+        assert((int)pkts[i].seq==1+i);
 }
 
 typedef struct{
@@ -82,19 +86,16 @@ void send_resp(const response&resp){
 }
 
 void send_cur(){
-    if(cur<pkts.size()){
-        cout<<"Send "<<cur<<endl;
-        send_resp(pkts[cur]);
-        return;
-    }else{
-        cout<<"`cur` too large"<<endl;
-    }
+    size_t wnd=8;
+    if(outCounter++%wrap==0)
+        cout<<"Send start from "<<base<<" to "<<min(base+wnd,pkts.size())<<endl;
+    for(unsigned i=base;i<base+wnd and i<pkts.size();++i)
+       send_resp(pkts[i]);
+    return;
 }
 
 void alrm(int sig){
     send_cur();
-    alarm(1);
-    
 }
 
 int main(int argc,char*argv[]) {
@@ -117,21 +118,27 @@ int main(int argc,char*argv[]) {
         exit(1);
     }
 
+    cout<<"Allocate memory for fileIO"<<endl;
     uint8_t*data=(uint8_t*)calloc(DATA,1);
+    cout<<"Start fileIO"<<endl;
     fileIO fio(data,DATA);
-    fio.readFiles(source);
+    int tmp=fio.readFiles(source);
+    cout<<tmp<<endl;
+    cout<<"FileIO end"<<endl;
     frag(data);
+    cout<<"packet generated"<<endl;
 
-    uint8_t*syn=(uint8_t*)malloc(1000);
+    uint8_t*syn=(uint8_t*)malloc(PAYLOAD);
     cout<<"PKT size: "<<pkts.size()<<endl;
-    memcpy(syn,to_string(pkts.size()).c_str(),1000);
+    memcpy(syn,to_string(pkts.size()).c_str(),PAYLOAD);
     pkts.insert(pkts.begin(),response(0,syn,0));
     pkts.front().flag=1;
     pkts.emplace_back(pkts.size(),syn,0);
     pkts.back().flag=2;
 
     signal(SIGALRM,alrm);
-    alrm(SIGALRM);
+
+    ualarm(1,100000);
 
     while(1){
         int rlen;
@@ -146,8 +153,9 @@ int main(int argc,char*argv[]) {
             cout<<"Request checksum failed!"<<endl;
             continue;
         }
-        cout<<curTime()<<" received "<<req.seq<<endl;
-        cur=max(cur,req.seq);
+        if(outCounter++%wrap==0)
+            cout<<curTime()<<" received "<<req.seq<<'/'<<pkts.size()<<' '<<100.0*req.seq/pkts.size()<<'%'<<endl;
+        base=max(base,req.seq);
     }
 
     close(sock);

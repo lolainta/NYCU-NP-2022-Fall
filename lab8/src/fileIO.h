@@ -17,7 +17,6 @@ class fileIO {
     dataPayload *payload;
     vector<filesystem::path> filenames;
     unsigned int payloadSize;
-
   public:
     fileIO(uint8_t *, unsigned int);
     int readFiles(string);

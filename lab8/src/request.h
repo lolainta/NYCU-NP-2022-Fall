@@ -4,11 +4,11 @@
 #include <cstdint>
 
 typedef struct __attribute__((packed))request{
-    uint16_t seq;
+    uint32_t seq;
     uint16_t checksum;
 	uint8_t flag;
     request();
-    request(uint16_t);
+    request(uint32_t);
     uint16_t genHash();
     bool check();
 }request;

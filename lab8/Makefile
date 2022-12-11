@@ -16,7 +16,7 @@ CPPFLAGS=-O3 -g -Wall -std=c++17 -static
 
 .PHONY: all clean check
 
-all: 
+all:
 	@mkdir -p $(BUILD_DIR)
 	make $(BUILD_DIR)/server
 	make $(BUILD_DIR)/client
