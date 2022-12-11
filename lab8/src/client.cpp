@@ -16,6 +16,7 @@
 
 #include "request.h"
 #include "response.h"
+#include "fileIO.h"
 
 #define cout cout<<"[Client]\t"
 
@@ -26,11 +27,10 @@ using namespace std;
 static int sock=-1;
 static sockaddr_in sin;
 static timeval curtv;
-static unsigned seq;
+// static unsigned seq;
 static uint16_t cur;
-static unsigned count=0;
 
-const unsigned int RAW_DATA=1*1024;
+const unsigned int RAW_DATA=33*1024*1024;
 const unsigned int DATA=(RAW_DATA/PAYLOAD+(bool)RAW_DATA%PAYLOAD)*800;
 
 vector<response> pkts;
@@ -38,12 +38,12 @@ vector<response> pkts;
 void frag(uint8_t*data){
     vector<response>&ret=pkts;
     uint16_t pid=1;
-    unsigned int num=DATA/PAYLOAD;;
+    unsigned int num=DATA/PAYLOAD;
     assert(DATA%PAYLOAD==0);
     for(unsigned i=0;i<num;++i)
         ret.emplace_back(pid++,data,i);
     assert(pkts.size()==(RAW_DATA/PAYLOAD+(bool)RAW_DATA%PAYLOAD));
-    for(int i=0;i<pkts.size();++i)
+    for(int i=0;i<(int)pkts.size();++i)
         assert(pkts[i].seq==1+i);
 }
 
@@ -61,6 +61,7 @@ cstr curTime(){
     return to_string(tv2ms(&curtv));
 }
 
+/*
 void send_ping(int sig){
     unsigned char buf[1024];
     if(sig == SIGALRM) {
@@ -74,6 +75,7 @@ void send_ping(int sig){
     count++;
     if(count > 20) exit(0);
 }
+*/
 
 void send_resp(const response&resp){
     sendto(sock,&resp,sizeof(response),0,(sockaddr*)&sin,sizeof(sin));
@@ -98,8 +100,9 @@ void alrm(int sig){
 int main(int argc,char*argv[]) {
     assert(argc==5);
     cstr source(argv[1]);
-    const int fileNum(stoi(argv[2]));
+//    const int fileNum(stoi(argv[2]));
     const int port(stoi(argv[3]));
+
     char*ip(argv[4]);
 
     cout<<sizeof(request)<<' '<<sizeof(response)<<endl;
@@ -115,11 +118,13 @@ int main(int argc,char*argv[]) {
     }
 
     uint8_t*data=(uint8_t*)calloc(DATA,1);
+    fileIO fio(data,DATA);
+    fio.readFiles(source);
     frag(data);
 
     uint8_t*syn=(uint8_t*)malloc(1000);
     cout<<"PKT size: "<<pkts.size()<<endl;
-    memcpy(syn,to_string(pkts.size()).c_str(),pkts.size()+1);
+    memcpy(syn,to_string(pkts.size()).c_str(),1000);
     pkts.insert(pkts.begin(),response(0,syn,0));
     pkts.front().flag=1;
     pkts.emplace_back(pkts.size(),syn,0);

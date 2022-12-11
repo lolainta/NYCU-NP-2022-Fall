@@ -6,7 +6,7 @@ TEST_DIR := ./test
 TEST_SRC_DIR := $(TEST_DIR)/src
 TEST_DEST_DIR := $(TEST_DIR)/dest
 
-_OBJS := response.o request.o
+_OBJS := response.o request.o fileIO.o payload.o
 OBJS := $(patsubst %.o,$(BUILD_DIR)/%.o,$(_OBJS))
 
 

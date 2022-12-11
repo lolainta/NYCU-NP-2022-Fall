@@ -22,7 +22,7 @@ using namespace std;
 int main(int argc,char*argv[]){
     assert(argc==4);
     str dest(argv[1]);
-    const int fileNum=stoi(argv[2]);
+//    const int fileNum=stoi(argv[2]);
     const int port(stoi(argv[3]));
 
     cout<<sizeof(request)<<' '<<sizeof(response)<<endl;
@@ -46,7 +46,6 @@ int main(int argc,char*argv[]){
     vector<response> pkts;
     vector<bool> tmp;
 
-    malloc(0);
     response*pkt=(response*)malloc(sizeof(response)+16);
     while(1){
         int rlen;
