@@ -1,14 +1,12 @@
+#include "fileIO.h"
+
 #include <string.h>
 
 #include <algorithm>
-#include <filesystem>
 #include <fstream>
 #include <iostream>
-#include <set>
 #include <string>
 #include <vector>
-
-#define PAYLOAD_SIZE 33554432
 
 using namespace std;
 
@@ -27,17 +25,9 @@ struct dataPayload {
 } __attribute__((packed)) payload;
 
 class fileIO {
-   private:
     dataPayload *payload;
     vector<filesystem::path> filenames;
     unsigned int payloadSize;
-
-    string genFilename(int num) {
-        string ret = to_string(num);
-        while (ret.size() < 6)
-            ret = "0" + ret;
-        return ret;
-    }
 
    public:
     fileIO(uint8_t *payload, unsigned int payloadSize) {
@@ -59,7 +49,7 @@ class fileIO {
         for (int i = 0; i < 1000; ++i) {
             // If num of files is less than 1000, set entries to 0;
             if (i < filenames.size()) {
-                cout << "[Reading file] " << this->filenames[i] << endl;
+                cout << this->filenames[i] << endl;
                 filesystem::directory_entry file(this->filenames[i]);
 
                 this->payload->fileEntries[i].contentOffset = contentCounter;
@@ -68,10 +58,8 @@ class fileIO {
 
                 ifstream fin(this->filenames[i]);
                 fin.read((char *)(this->payload->content + contentCounter), file.file_size());
-                fin.close();
 
-                this->payload->fileEntries[i].checksum = 0;
-                for (uint8_t *it = this->payload->content + this->payload->fileEntries[i].contentOffset; it < this->payload->content + this->payload->fileEntries[i].contentOffset + file.file_size(); it += 2) {
+                for (uint8_t *it = this->payload->content + contentCounter; it < this->payload->content + contentCounter + file.file_size(); it += 2) {
                     this->payload->fileEntries[i].checksum ^= *(uint16_t *)it;
                 }
 
@@ -81,44 +69,16 @@ class fileIO {
                 this->payload->fileEntries[i].size = 0;
                 this->payload->fileEntries[i].checksum = 0;
             }
+            // cout << (char *)this->payload->content << endl;
         }
-        return contentCounter;
+
+        return 0;
     }
     string getFile(int idx) {
         char *tmp = (char *)malloc(this->payload->fileEntries[idx].size);
         memcpy(tmp, (this->payload->content + this->payload->fileEntries[idx].contentOffset), this->payload->fileEntries[idx].size);
         string ret(tmp);
         return ret;
-    }
-    int writeFiles(string filePath) {
-        for (int i = 0; i < 1000; ++i) {
-            // If num of files is less than 1000, set entries to 0;
-            if (this->payload->fileEntries[i].size != 0) {
-                cout << "[Writing file] " << this->filenames[i] << endl;
-
-                uint16_t checksum = 0;
-
-                for (uint8_t *it = this->payload->content + this->payload->fileEntries[i].contentOffset; it < this->payload->content + this->payload->fileEntries[i].contentOffset + this->payload->fileEntries[i].size; it += 2) {
-                    checksum ^= *(uint16_t *)it;
-                }
-
-                if (checksum != this->payload->fileEntries[i].checksum) {
-                    cout << "File num " << i << "is broken.";
-                    continue;
-                }
-
-                ofstream fOut(filePath + "/" + genFilename(i), ios::out | ios::binary);
-
-                fOut.write((char *)(this->payload->content + this->payload->fileEntries[i].contentOffset), this->payload->fileEntries[i].size);
-
-                fOut.close();
-
-                this->payload->fileEntries[i].checksum = 0;
-
-            } else {
-                break;
-            }
-        }
     }
 };
 
