@@ -1,0 +1,3 @@
+[submodule "lab8/lib/snappy"]
+	path = lab8/lib/snappy
+	url = https://github.com/google/snappy.git
