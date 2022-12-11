@@ -68,6 +68,45 @@ string fileIO::getFile(int idx) {
     return ret;
 }
 
+string fileIO::genFilename(int num) {
+    string ret = to_string(num);
+    while (ret.size() < 6)
+        ret = "0" + ret;
+    return ret;
+}
+
+int fileIO::writeFiles(string filePath) {
+    for (int i = 0; i < 1000; ++i) {
+        // If num of files is less than 1000, set entries to 0;
+        if (this->payload->fileEntries[i].size != 0) {
+            // cout << "[Writing file] " << this->filenames[i] << endl;
+
+            uint16_t checksum = 0;
+
+            for (uint8_t *it = this->payload->content + this->payload->fileEntries[i].contentOffset; it < this->payload->content + this->payload->fileEntries[i].contentOffset + this->payload->fileEntries[i].size; it += 2) {
+                checksum ^= *(uint16_t *)it;
+            }
+
+            if (checksum != this->payload->fileEntries[i].checksum) {
+                cout << "File num " << i << "is broken.";
+                continue;
+            }
+
+            ofstream fOut(filePath + "/" + genFilename(i), ios::out | ios::binary);
+
+            fOut.write((char *)(this->payload->content + this->payload->fileEntries[i].contentOffset), this->payload->fileEntries[i].size);
+
+            fOut.close();
+
+            this->payload->fileEntries[i].checksum = 0;
+
+        } else {
+            break;
+        }
+    }
+    return 0;
+}
+
 int main() {
     uint8_t *mem = (uint8_t *)malloc(PAYLOAD_SIZE);
 
