@@ -3,6 +3,7 @@
 
 #include <cstdint>
 
+// Assume content size is less than 32MB
 #define PAYLOAD_SIZE 33554432
 
 struct dataPayload {
