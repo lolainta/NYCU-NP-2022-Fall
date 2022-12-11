@@ -1,4 +1,5 @@
 #include "fileIO.h"
+#include "snappy.h"
 
 #include <string.h>
 
@@ -56,7 +57,18 @@ int fileIO::readFiles(string filePath) {
         }
     }
 
-    return 8 + 64 * 1000 + contentCounter;
+    int uncompressedSize = 8 + 64 * 1000 + contentCounter;
+    size_t compressedSize;
+    char *rawComp = (char *) malloc(snappy::MaxCompressedLength(uncompressedSize));
+
+    snappy::RawCompress((char *)this->payload, uncompressedSize, rawComp, &compressedSize);
+
+    memcpy(this->payload, rawComp, compressedSize);
+    free(rawComp);
+
+    cout << "[FileIO]\t" << "Compressed rate: " << (double)compressedSize / uncompressedSize * 100 << "%" << endl;
+
+    return compressedSize;
 }
 
 string fileIO::getFile(int idx) {
@@ -74,6 +86,13 @@ string fileIO::genFilename(int num) {
 }
 
 int fileIO::writeFiles(string filePath) {
+    char *rawUncomp = (char *) malloc(this->payloadSize);
+
+    snappy::RawUncompress((char *)this->payload, this->payloadSize, rawUncomp);
+
+    memcpy(this->payload, rawUncomp, this->payloadSize);
+    free(rawUncomp);
+
     int fileWritten = 0;
     for (int i = 0; i < 1000; ++i) {
         // If num of files is less than 1000, break the loop.
@@ -101,12 +120,12 @@ int fileIO::writeFiles(string filePath) {
     return fileWritten;
 }
 
-int main() {
-    uint8_t *mem = (uint8_t *)malloc(PAYLOAD_SIZE);
+// int main() {
+//     uint8_t *mem = (uint8_t *)malloc(PAYLOAD_SIZE);
 
-    fileIO tmp(mem, PAYLOAD_SIZE);
-    tmp.readFiles("/root/NYCU-NP-2022-Fall/lab6");
-    tmp.writeFiles("/root/NYCU-NP-2022-Fall/test");
+//     fileIO tmp(mem, PAYLOAD_SIZE);
+//     tmp.readFiles("/root/NYCU-NP-2022-Fall/lab6");
+//     tmp.writeFiles("/root/NYCU-NP-2022-Fall/test");
 
-    return 0;
-}
+//     return 0;
+// }
