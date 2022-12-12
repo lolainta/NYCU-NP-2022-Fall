@@ -22,6 +22,7 @@
 
 int outCounter=0;
 const int wrap=1000;
+// const int wrap=1;
 
 using str=std::string;
 using cstr=const str;
@@ -33,22 +34,22 @@ static timeval curtv;
 // static unsigned seq;
 static uint32_t base;
 
-const unsigned int RAW_DATA=32*1024*1024;
-const unsigned int DATA=(RAW_DATA/PAYLOAD+(bool)RAW_DATA%PAYLOAD)*PAYLOAD;
+const unsigned int MAX_DATA=32*1024*1024;
 
 vector<response> pkts;
 
-void frag(uint8_t*data){
+int frag(uint8_t*data,const unsigned int&size){
+    const unsigned int rsize=(size/PAYLOAD+(bool)size%PAYLOAD)*PAYLOAD;
+    assert(rsize%PAYLOAD==0);
+    unsigned int num=rsize/PAYLOAD;
+    assert(num<(1<<17)-1);
     vector<response>&ret=pkts;
     uint32_t pid=1;
-    unsigned int num=DATA/PAYLOAD;
-    assert(DATA%PAYLOAD==0);
-    assert(num<(1<<17)-1);
     for(unsigned i=0;i<num;++i)
         ret.emplace_back(pid++,data,i);
-    assert(pkts.size()==(RAW_DATA/PAYLOAD+(bool)RAW_DATA%PAYLOAD));
     for(int i=0;i<(int)pkts.size();++i)
         assert((int)pkts[i].seq==1+i);
+    return pkts.size();
 }
 
 typedef struct{
@@ -119,18 +120,17 @@ int main(int argc,char*argv[]) {
     }
 
     cout<<"Allocate memory for fileIO"<<endl;
-    uint8_t*data=(uint8_t*)calloc(DATA,1);
+    uint8_t*data=(uint8_t*)calloc(MAX_DATA,1);
     cout<<"Start fileIO"<<endl;
-    fileIO fio(data,DATA);
+    fileIO fio(data,MAX_DATA);
     int total=fio.readFiles(source);
     cout<<total<<" bytes in total"<<endl;
     cout<<"FileIO end"<<endl;
-    frag(data);
-    cout<<"packet generated"<<endl;
+    int num=frag(data,total);
+    cout<<num<<" packets generated"<<endl;
 
     uint8_t*syn=(uint8_t*)malloc(PAYLOAD);
-    cout<<"PKT size: "<<pkts.size()<<endl;
-    memcpy(syn,to_string(pkts.size()).c_str(),PAYLOAD);
+    memcpy(syn,to_string(num+2).c_str(),PAYLOAD);
     pkts.insert(pkts.begin(),response(0,syn,0));
     pkts.front().flag=1;
     pkts.emplace_back(pkts.size(),syn,0);
@@ -138,7 +138,7 @@ int main(int argc,char*argv[]) {
 
     signal(SIGALRM,alrm);
 
-    ualarm(1,100000);
+    ualarm(1,10000);
 
     while(1){
         int rlen;
@@ -153,15 +153,18 @@ int main(int argc,char*argv[]) {
             cout<<"Request checksum failed!"<<endl;
             continue;
         }
-        if(req.seq==20969){
-            cout<<req.seq<<" received!"<<endl;
+        if(outCounter++%wrap==0)
+            cout<<curTime()<<" received "<<req.seq<<'/'<<pkts.size()<<' '<<100.0*(req.seq-1)/pkts.size()<<'%'<<endl;
+        base=max(base,req.seq);
+        if(outCounter++%wrap==0)
+            cout<<"base="<<base<<endl;
+        if(base==pkts.size()){
+            cout<<"FINACK"<<endl;
             break;
         }
-        if(outCounter++%wrap==0)
-            cout<<curTime()<<" received "<<req.seq<<'/'<<pkts.size()<<' '<<100.0*req.seq/pkts.size()<<'%'<<endl;
-        base=max(base,req.seq);
     }
-    cout<<"Last ACK got!"<<endl;
-
+    cout<<"End of while loop"<<endl;
     close(sock);
+    cout<<"Client end"<<endl;
+    return 0;
 }

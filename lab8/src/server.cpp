@@ -17,6 +17,7 @@
 #define cout cout<<"[Server]\t"
 int outCounter=0;
 const int wrap=1000;
+// const int wrap=1;
 
 using str=std::string;
 using cstr=const str;
@@ -87,10 +88,7 @@ int main(int argc,char*argv[]){
             ack.assign(size,false);
         }else if(resp.flag==2){
             cout<<"GOT FIN"<<endl;
-            cout<<pkts.size()<<endl<<flush;
-            cout<<resp.seq<<endl<<flush;
-            assert(resp.seq==pkts.size()+1);
-            break;
+            assert(resp.seq==pkts.size()-1);
         }else{
             if(base==0 and resp.seq!=0)
                 continue;
@@ -99,33 +97,40 @@ int main(int argc,char*argv[]){
 //        assert(cur>=base);
         ack[cur]=true;
         if(cur==base){
-            while(base+1<=pkts.size() and ack[++base]);
+            while(base<pkts.size() and ack[base])
+                base++;
+            /*
+            for(;base<pkts.size()+1;++base){
+                if(base!=pkts.size() and !ack[base]){
+                    base++;
+                    break;
+                }
+            }
+            */
             if(outCounter++%wrap==0)
                 cout<<"Set base to "<<base<<endl;
         }
-        if(base*2>=pkts.size()){
-            cout<<"Debug mode"<<endl;
-            break;
-        }
-        if(base==pkts.size()){
-            cout<<"Received last packet."<<endl;
-            request req(base);
-            sendto(sock,&req,rlen,0,(sockaddr*)&csin,sizeof(csin));
-            break;
-        }
         request req(base);
-        assert(ack[base]==false);
+        if(base!=pkts.size())
+            assert(ack[base]==false);
         if(outCounter++%wrap==0)
             cout<<"Send: "<<base<<endl;
         sendto(sock,&req,rlen,0,(sockaddr*)&csin,sizeof(csin));
+        if(base==pkts.size()){
+            cout<<"Received last packet."<<endl;
+            for(int i=0;i<10;++i)
+                sendto(sock,&req,rlen,0,(sockaddr*)&csin,sizeof(csin));
+            break;
+        }
     }
-    cout<<"End of while loop."<<endl;
-    
+    cout<<"End of while loop"<<endl;
+
     uint8_t*data=(uint8_t*)calloc(DATA,1);
     defrag(data);
     fileIO fio(data,DATA);
     fio.writeFiles(dest);
     close(sock);
+    cout<<"Server end"<<endl;
     return 0;
 
 }
