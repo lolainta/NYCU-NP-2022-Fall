@@ -9,6 +9,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include <thread>
 #include <iostream>
 #include <cassert>
 #include <string>
@@ -86,17 +87,20 @@ void send_resp(const response&resp){
     sendto(sock,&resp,sizeof(response),0,(sockaddr*)&sin,sizeof(sin));
 }
 
-void send_cur(){
-    size_t wnd=512;
+int send_cur(const size_t&wnd){
+    cout<<"send base: "<<base<<endl;
     if(outCounter++%wrap==0)
         cout<<"Send start from "<<base<<" to "<<min(base+wnd,pkts.size())<<endl;
+    if(base==pkts.size())
+        return 1;
     for(unsigned i=base;i<base+wnd and i<pkts.size();++i)
        send_resp(pkts[i]);
-    return;
+    usleep(1000000);
+    return 0;
 }
 
-void alrm(int sig){
-    send_cur();
+void sender(int sig){
+    while(send_cur(512)==0);
 }
 
 int main(int argc,char*argv[]) {
@@ -136,9 +140,7 @@ int main(int argc,char*argv[]) {
     pkts.emplace_back(pkts.size(),syn,0);
     pkts.back().flag=2;
 
-    signal(SIGALRM,alrm);
-
-    ualarm(1,10000);
+    thread th1(sender,0);
 
     while(1){
         int rlen;
@@ -156,8 +158,6 @@ int main(int argc,char*argv[]) {
         if(outCounter++%wrap==0)
             cout<<curTime()<<" received "<<req.seq<<'/'<<pkts.size()<<' '<<100.0*(req.seq-1)/pkts.size()<<'%'<<endl;
         base=max(base,req.seq);
-        if(outCounter++%wrap==0)
-            cout<<"base="<<base<<endl;
         if(base==pkts.size()){
             cout<<"FINACK"<<endl;
             break;
@@ -166,5 +166,6 @@ int main(int argc,char*argv[]) {
     cout<<"End of while loop"<<endl;
     close(sock);
     cout<<"Client end"<<endl;
+    th1.join();
     return 0;
 }
