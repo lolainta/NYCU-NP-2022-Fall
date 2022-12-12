@@ -43,13 +43,14 @@ int fileIO::readFiles(string filePath) {
 
             ifstream fin(filenames[i]);
             fin.read((char *)contentStart, file.file_size());
+            fin.close();
 
             // for (uint8_t *it = contentStart; it < contentStart + file.file_size(); it += 2) {
             //     this->payload->fileEntries[i].checksum ^= *(uint16_t *)it;
             // }
 
             contentCounter += file.file_size();
-            contentCounter += 16 - (contentCounter % 16);
+            contentCounter += (contentCounter % 16 == 0) ? 0 : 16 - (contentCounter % 16);
         } else {
             this->payload->fileEntries[i].contentOffset = 0;
             this->payload->fileEntries[i].size = 0;
@@ -58,6 +59,9 @@ int fileIO::readFiles(string filePath) {
     }
 
     int uncompressedSize = 8 + (32 + 16) * 1000 + contentCounter;
+
+    return uncompressedSize;
+
     size_t compressedSize;
     char *rawComp = (char *) malloc(snappy::MaxCompressedLength(uncompressedSize));
 
@@ -86,17 +90,17 @@ string fileIO::genFilename(int num) {
 }
 
 int fileIO::writeFiles(string filePath) {
-    char *rawUncomp = (char *) malloc(this->payloadSize);
+    // char *rawUncomp = (char *) malloc(this->payloadSize);
 
-    bool success = snappy::RawUncompress((char *)this->payload, this->payloadSize, rawUncomp);
+    // bool success = snappy::RawUncompress((char *)this->payload, this->payloadSize, rawUncomp);
 
-    if (!success) {
-        cout << "[FileIO]\t Cannot uncompress." << endl;
-        return 0;
-    }
+    // if (!success) {
+    //     cout << "[FileIO]\tCannot uncompress." << endl;
+    //     return 0;
+    // }
 
-    memcpy(this->payload, rawUncomp, this->payloadSize);
-    free(rawUncomp);
+    // memcpy(this->payload, rawUncomp, this->payloadSize);
+    // free(rawUncomp);
 
     int fileWritten = 0;
     for (int i = 0; i < 1000; ++i) {
@@ -115,7 +119,7 @@ int fileIO::writeFiles(string filePath) {
             //     continue;
             // }
 
-            ofstream fOut(filePath + "/" + genFilename(i), ios::out | ios::binary);
+            ofstream fOut(filePath + "/" + genFilename(i));
             fOut.write((char *)contentStart, this->payload->fileEntries[i].size);
             fOut.close();
             fileWritten++;
