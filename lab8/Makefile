@@ -9,9 +9,12 @@ TEST_DEST_DIR := $(TEST_DIR)/dest
 _OBJS := response.o request.o fileIO.o payload.o
 OBJS := $(patsubst %.o,$(BUILD_DIR)/%.o,$(_OBJS))
 
+SNAPPY_FLAG := -I lib/snappy/ -I lib/snappy/build -L lib/snappy/build/ -lsnappy 
 
-CXX=g++
-CPPFLAGS=-O3 -g -Wall -std=c++17 -static -I lib/snappy/ -I lib/snappy/build -L lib/snappy/build/ -lsnappy
+PARAM_FLAGS := -DPAYLOAD=300
+
+CXX := g++
+CPPFLAGS := -O3 -g -Wall -std=c++17 -static $(SNAPPY_FLAG) $(PARAM_FLAGS)
 
 
 .PHONY: all clean check

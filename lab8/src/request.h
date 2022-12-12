@@ -5,12 +5,11 @@
 
 typedef struct __attribute__((packed))request{
     uint32_t seq;
-    uint16_t checksum;
+    uint32_t par;
 	uint8_t flag;
     request();
     request(uint32_t);
-    uint16_t genHash();
-    bool check();
+    request(uint32_t,uint32_t);
 }request;
 
 #endif
