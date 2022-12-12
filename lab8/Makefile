@@ -11,7 +11,7 @@ OBJS := $(patsubst %.o,$(BUILD_DIR)/%.o,$(_OBJS))
 
 
 CXX=g++
-CPPFLAGS=-O3 -g -Wall -std=c++17 -static
+CPPFLAGS=-O3 -g -Wall -std=c++17 -static -I lib/snappy/ -I lib/snappy/build -L lib/snappy/build/ -lsnappy
 
 
 .PHONY: all clean check
