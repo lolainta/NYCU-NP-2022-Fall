@@ -22,7 +22,7 @@
 #define cout cout<<"[Client]\t"
 
 int outCounter=0;
-const int wrap=1000;
+const int wrap=5000;
 // const int wrap=1;
 
 using str=std::string;
@@ -38,12 +38,12 @@ static uint32_t base;
 const unsigned int MAX_DATA=32*1024*1024;
 
 vector<response> pkts;
+vector<bool> ack;
 
 int frag(uint8_t*data,const unsigned int&size){
     const unsigned int rsize=(size/PAYLOAD+(bool)size%PAYLOAD)*PAYLOAD;
     assert(rsize%PAYLOAD==0);
     unsigned int num=rsize/PAYLOAD;
-    assert(num<(1<<17)-1);
     vector<response>&ret=pkts;
     uint32_t pid=1;
     for(unsigned i=0;i<num;++i)
@@ -67,35 +67,21 @@ cstr curTime(){
     return to_string(tv2ms(&curtv));
 }
 
-/*
-void send_ping(int sig){
-    unsigned char buf[1024];
-    if(sig == SIGALRM) {
-        ping_t *p = (ping_t*) buf;
-        p->seq = seq++;
-        gettimeofday(&p->tv, NULL);
-        if(sendto(sock, p, sizeof(*p)+16, 0, (struct sockaddr*) &sin, sizeof(sin)) < 0)
-            perror("sendto");
-        alarm(1);
-    }
-    count++;
-    if(count > 20) exit(0);
-}
-*/
-
 void send_resp(const response&resp){
     sendto(sock,&resp,sizeof(response),0,(sockaddr*)&sin,sizeof(sin));
 }
 
 int send_cur(const size_t&wnd){
-    cout<<"send base: "<<base<<endl;
+    if(outCounter++%wrap==0)
+        cout<<"send base: "<<base<<endl;
     if(outCounter++%wrap==0)
         cout<<"Send start from "<<base<<" to "<<min(base+wnd,pkts.size())<<endl;
     if(base==pkts.size())
         return 1;
     for(unsigned i=base;i<base+wnd and i<pkts.size();++i)
-       send_resp(pkts[i]);
-    usleep(1000000);
+        if(!ack[i])
+            send_resp(pkts[i]);
+    usleep(100000);
     return 0;
 }
 
@@ -131,6 +117,7 @@ int main(int argc,char*argv[]) {
     cout<<total<<" bytes in total"<<endl;
     cout<<"FileIO end"<<endl;
     int num=frag(data,total);
+    ack.assign(num+2,false);
     cout<<num<<" packets generated"<<endl;
 
     uint8_t*syn=(uint8_t*)malloc(PAYLOAD);
@@ -151,10 +138,9 @@ int main(int argc,char*argv[]) {
             perror("recvfrom");
             continue;
         }
-        if(!req.check()){
-            cout<<"Request checksum failed!"<<endl;
-            continue;
-        }
+        assert(req.seq==ack.size() or ack[req.seq]==false);
+        for(size_t i=base;i<req.seq;++i)
+            ack[i]=true;
         if(outCounter++%wrap==0)
             cout<<curTime()<<" received "<<req.seq<<'/'<<pkts.size()<<' '<<100.0*(req.seq-1)/pkts.size()<<'%'<<endl;
         base=max(base,req.seq);
