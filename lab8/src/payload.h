@@ -11,7 +11,7 @@ struct dataPayload {
     struct fileEntry {
         uint32_t contentOffset;
         uint16_t size;
-        uint16_t checksum;
+        // uint16_t checksum;
     } __attribute__((packed)) fileEntries[1000];
     uint8_t content[PAYLOAD_SIZE];
 } __attribute__((packed));

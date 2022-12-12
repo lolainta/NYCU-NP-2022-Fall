@@ -37,27 +37,27 @@ int fileIO::readFiles(string filePath) {
 
             this->payload->fileEntries[i].contentOffset = contentCounter;
             this->payload->fileEntries[i].size = file.file_size();
-            this->payload->fileEntries[i].checksum = 0;
+            // this->payload->fileEntries[i].checksum = 0;
 
             uint8_t *contentStart = this->payload->content + contentCounter;
 
             ifstream fin(filenames[i]);
             fin.read((char *)contentStart, file.file_size());
 
-            for (uint8_t *it = contentStart; it < contentStart + file.file_size(); it += 2) {
-                this->payload->fileEntries[i].checksum ^= *(uint16_t *)it;
-            }
+            // for (uint8_t *it = contentStart; it < contentStart + file.file_size(); it += 2) {
+            //     this->payload->fileEntries[i].checksum ^= *(uint16_t *)it;
+            // }
 
             contentCounter += file.file_size();
             contentCounter += 16 - (contentCounter % 16);
         } else {
             this->payload->fileEntries[i].contentOffset = 0;
             this->payload->fileEntries[i].size = 0;
-            this->payload->fileEntries[i].checksum = 0;
+            // this->payload->fileEntries[i].checksum = 0;
         }
     }
 
-    int uncompressedSize = 8 + 64 * 1000 + contentCounter;
+    int uncompressedSize = 8 + (32 + 16) * 1000 + contentCounter;
     size_t compressedSize;
     char *rawComp = (char *) malloc(snappy::MaxCompressedLength(uncompressedSize));
 
@@ -88,7 +88,12 @@ string fileIO::genFilename(int num) {
 int fileIO::writeFiles(string filePath) {
     char *rawUncomp = (char *) malloc(this->payloadSize);
 
-    snappy::RawUncompress((char *)this->payload, this->payloadSize, rawUncomp);
+    bool success = snappy::RawUncompress((char *)this->payload, this->payloadSize, rawUncomp);
+
+    if (!success) {
+        cout << "[FileIO]\t Cannot uncompress." << endl;
+        return 0;
+    }
 
     memcpy(this->payload, rawUncomp, this->payloadSize);
     free(rawUncomp);
@@ -97,18 +102,18 @@ int fileIO::writeFiles(string filePath) {
     for (int i = 0; i < 1000; ++i) {
         // If num of files is less than 1000, break the loop.
         if (this->payload->fileEntries[i].size != 0) {
-            uint16_t checksum = 0;
+            // uint16_t checksum = 0;
 
             uint8_t *contentStart = this->payload->content + this->payload->fileEntries[i].contentOffset;
 
-            for (uint8_t *it = contentStart; it < contentStart + this->payload->fileEntries[i].size; it += 2) {
-                checksum ^= *(uint16_t *)it;
-            }
+            // for (uint8_t *it = contentStart; it < contentStart + this->payload->fileEntries[i].size; it += 2) {
+            //     checksum ^= *(uint16_t *)it;
+            // }
 
-            if (checksum != this->payload->fileEntries[i].checksum) {
-                cout << "File num " << i << " is broken." << endl;
-                continue;
-            }
+            // if (checksum != this->payload->fileEntries[i].checksum) {
+            //     cout << "File num " << i << " is broken." << endl;
+            //     continue;
+            // }
 
             ofstream fOut(filePath + "/" + genFilename(i), ios::out | ios::binary);
             fOut.write((char *)contentStart, this->payload->fileEntries[i].size);
