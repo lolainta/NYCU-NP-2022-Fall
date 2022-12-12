@@ -86,7 +86,7 @@ int send_cur(const size_t&wnd){
 }
 
 void sender(int sig){
-    while(send_cur(512)==0);
+    while(send_cur(1<<25)==0);
 }
 
 int main(int argc,char*argv[]) {
@@ -141,6 +141,9 @@ int main(int argc,char*argv[]) {
         assert(req.seq==ack.size() or ack[req.seq]==false);
         for(size_t i=base;i<req.seq;++i)
             ack[i]=true;
+        if(req.par!=req.seq){
+            ack[req.par]=true;
+        }
         if(outCounter++%wrap==0)
             cout<<curTime()<<" received "<<req.seq<<'/'<<pkts.size()<<' '<<100.0*(req.seq-1)/pkts.size()<<'%'<<endl;
         base=max(base,req.seq);

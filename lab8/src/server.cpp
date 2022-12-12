@@ -77,8 +77,8 @@ int main(int argc,char*argv[]){
             assert(resp.seq==0);
             size_t size=stoi((char*)resp.payload);
             cout<<"Number of packets: "<<size<<endl;
-            pkts.assign(size,response());
-            ack.assign(size,false);
+            pkts.resize(size,response());
+            ack.resize(size,false);
         }else if(resp.flag==2){
             cout<<"GOT FIN"<<endl;
             assert(resp.seq==pkts.size()-1);
@@ -87,14 +87,17 @@ int main(int argc,char*argv[]){
                 continue;
             pkts[cur]=resp;
         }
+        request req;
         ack[cur]=true;
         if(cur==base){
             while(base<pkts.size() and ack[base])
                 base++;
             if(outCounter++%wrap==0)
                 cout<<"Set base to "<<base<<endl;
+            req=request(base);
+        }else{
+            req=request(base,cur);
         }
-        request req(base);
         if(base!=pkts.size())
             assert(ack[base]==false);
         if(outCounter++%wrap==0)
