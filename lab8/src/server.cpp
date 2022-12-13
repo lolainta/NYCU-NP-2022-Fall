@@ -16,8 +16,8 @@
 
 #define cout cout<<"[Server]\t"
 int outCounter=0;
+// const int wrap=20001;
 const int wrap=10001;
-// const int wrap=1;
 
 using str=std::string;
 using cstr=const str;
@@ -79,7 +79,7 @@ int main(int argc,char*argv[]){
             cout<<"Number of packets: "<<size<<endl;
             pkts.resize(size,response());
             ack.resize(size,false);
-        }else if(resp.flag==2){
+        }else if(resp.flag==2 and !pkts.empty()){
             cout<<"GOT FIN"<<endl;
             assert(resp.seq==pkts.size()-1);
         }else{
@@ -101,7 +101,7 @@ int main(int argc,char*argv[]){
         if(base!=pkts.size())
             assert(ack[base]==false);
         if(outCounter++%wrap==0)
-            cout<<"Send: "<<base<<endl;
+            cout<<"Send: "<<req.seq<<' '<<req.par<<endl;
         sendto(sock,&req,rlen,0,(sockaddr*)&csin,sizeof(csin));
         if(base==pkts.size()){
             cout<<"Received last packet."<<endl;

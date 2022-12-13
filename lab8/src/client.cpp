@@ -22,7 +22,7 @@
 #define cout cout<<"[Client]\t"
 
 int outCounter=0;
-const int wrap=5000;
+const int wrap=4001;
 // const int wrap=1;
 
 using str=std::string;
@@ -71,22 +71,34 @@ void send_resp(const response&resp){
     sendto(sock,&resp,sizeof(response),0,(sockaddr*)&sin,sizeof(sin));
 }
 
-int send_cur(const size_t&wnd){
+int send_cur(const size_t&wnd,size_t offset){
+    size_t st=base;
+    size_t cnt=0;
     if(outCounter++%wrap==0)
         cout<<"send base: "<<base<<endl;
     if(outCounter++%wrap==0)
         cout<<"Send start from "<<base<<" to "<<min(base+wnd,pkts.size())<<endl;
     if(base==pkts.size())
         return 1;
-    for(unsigned i=base;i<base+wnd and i<pkts.size();++i)
+    for(size_t i=st;i<pkts.size();++i){
         if(!ack[i])
-            send_resp(pkts[i]);
-    usleep(100000);
+            send_resp(pkts[i]),++cnt;
+        if(base==0 and i>=1000)
+            return 0;
+        if(cnt>wnd){
+            if(outCounter++%wrap==0)
+                cout<<"Sleep when sending "<<i<<endl;
+            usleep(80000);
+            cnt-=wnd;
+            continue;
+            return 0;
+        }
+    }
     return 0;
 }
 
-void sender(int sig){
-    while(send_cur(1<<25)==0);
+void sender(int sz,int offset){
+    while(send_cur(sz,offset)==0);
 }
 
 int main(int argc,char*argv[]) {
@@ -96,6 +108,7 @@ int main(int argc,char*argv[]) {
     const int port(stoi(argv[3]));
 
     char*ip(argv[4]);
+//    exec("echo 1");
 
     cout<<sizeof(request)<<' '<<sizeof(response)<<endl;
 
@@ -127,7 +140,9 @@ int main(int argc,char*argv[]) {
     pkts.emplace_back(pkts.size(),syn,0);
     pkts.back().flag=2;
 
-    thread th1(sender,0);
+    int work=num/4;
+    vector<thread> thrds;
+    thrds.emplace_back(sender,2048,0);
 
     while(1){
         int rlen;
@@ -145,7 +160,7 @@ int main(int argc,char*argv[]) {
             ack[req.par]=true;
         }
         if(outCounter++%wrap==0)
-            cout<<curTime()<<" received "<<req.seq<<'/'<<pkts.size()<<' '<<100.0*(req.seq-1)/pkts.size()<<'%'<<endl;
+            cout<<curTime()<<" received "<<req.par<<' '<<req.seq<<'/'<<pkts.size()<<' '<<100.0*(req.seq-1)/pkts.size()<<'%'<<endl;
         base=max(base,req.seq);
         if(base==pkts.size()){
             cout<<"FINACK"<<endl;
@@ -155,6 +170,7 @@ int main(int argc,char*argv[]) {
     cout<<"End of while loop"<<endl;
     close(sock);
     cout<<"Client end"<<endl;
-    th1.join();
+    for(auto&t:thrds)
+        t.join();
     return 0;
 }

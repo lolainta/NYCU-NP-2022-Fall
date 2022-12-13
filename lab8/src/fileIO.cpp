@@ -30,7 +30,7 @@ int fileIO::readFiles(string filePath) {
 
     int contentCounter = 0;
 
-    for (int i = 0; i < 1000; ++i) {
+    for (size_t i = 0; i < 1000; ++i) {
         // If num of files is less than 1000, clear reminding entries.
         if (i < filenames.size()) {
             filesystem::directory_entry file(filenames[i]);
