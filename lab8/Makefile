@@ -14,7 +14,7 @@ SNAPPY_FLAG := -I lib/snappy/ -I lib/snappy/build -L lib/snappy/build/ -lsnappy
 PARAM_FLAGS := -DPAYLOAD=300
 
 CXX := g++
-CPPFLAGS := -O3 -g -Wall -std=c++17 -static $(SNAPPY_FLAG) $(PARAM_FLAGS)
+CPPFLAGS := -Ofast -g -Wall -std=c++17 -static $(SNAPPY_FLAG) $(PARAM_FLAGS)
 
 
 .PHONY: all clean check

@@ -16,8 +16,8 @@
 
 #define cout cout<<"[Server]\t"
 int outCounter=0;
-// const int wrap=20001;
-const int wrap=10001;
+// const int wrap=1;
+const int wrap=6001;
 
 using str=std::string;
 using cstr=const str;
@@ -96,19 +96,30 @@ int main(int argc,char*argv[]){
                 cout<<"Set base to "<<base<<endl;
             req=request(base);
         }else{
-            req=request(base,cur);
+            if(resp.seq>=base+BS)
+                req=request(base,cur);
+            else
+                req=request(base,ack);
         }
         if(base!=pkts.size())
             assert(ack[base]==false);
-        if(outCounter++%wrap==0)
-            cout<<"Send: "<<req.seq<<' '<<req.par<<endl;
-        sendto(sock,&req,rlen,0,(sockaddr*)&csin,sizeof(csin));
+        if(outCounter++%wrap==0){
+            cout<<"Send: "<<req.seq<<endl;
+            int load=0;
+            for(auto b:ack)
+                if(b)
+                    ++load;
+            cout<<load<<' '<<ack.size()<<' '<<100.0*load/ack.size()<<'%'<<endl;
+        }
+        for(int i=0;i<10;++i)
+            sendto(sock,&req,rlen,0,(sockaddr*)&csin,sizeof(csin));
         if(base==pkts.size()){
             cout<<"Received last packet."<<endl;
             for(int i=0;i<10;++i)
                 sendto(sock,&req,rlen,0,(sockaddr*)&csin,sizeof(csin));
             break;
         }
+            
     }
     cout<<"End of while loop"<<endl;
 

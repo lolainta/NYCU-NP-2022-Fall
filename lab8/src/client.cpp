@@ -88,12 +88,13 @@ int send_cur(const size_t&wnd,size_t offset){
         if(cnt>wnd){
             if(outCounter++%wrap==0)
                 cout<<"Sleep when sending "<<i<<endl;
-            usleep(80000);
+            usleep(90);
             cnt-=wnd;
             continue;
             return 0;
         }
     }
+    usleep(1000);
     return 0;
 }
 
@@ -140,9 +141,8 @@ int main(int argc,char*argv[]) {
     pkts.emplace_back(pkts.size(),syn,0);
     pkts.back().flag=2;
 
-    int work=num/4;
     vector<thread> thrds;
-    thrds.emplace_back(sender,2048,0);
+    thrds.emplace_back(sender,BS,0);
 
     while(1){
         int rlen;
@@ -156,16 +156,31 @@ int main(int argc,char*argv[]) {
         assert(req.seq==ack.size() or ack[req.seq]==false);
         for(size_t i=base;i<req.seq;++i)
             ack[i]=true;
-        if(req.par!=req.seq){
+        if(req.flag==1){
+            for(int i=0;i<BS and i+req.seq<ack.size();++i){
+//                assert(!ack[req.seq+i] or req.bs[i]);
+                if(ack[req.seq+i]==true and req.bs[i]==false){
+                    cout<<req.seq<<' '<<i<<endl;
+                }
+                ack[req.seq+i]=(bool)req.bs[i];
+            }
+        }else if(req.par!=req.seq){
             ack[req.par]=true;
         }
-        if(outCounter++%wrap==0)
-            cout<<curTime()<<" received "<<req.par<<' '<<req.seq<<'/'<<pkts.size()<<' '<<100.0*(req.seq-1)/pkts.size()<<'%'<<endl;
+
+        if(outCounter++%wrap==0){
+            int load=0;
+            for(auto b:ack)
+                if(b)
+                    ++load;
+            cout<<curTime()<<" received "<<req.par<<' '<<req.seq<<' '<<load<<'/'<<pkts.size()<<' '<<100.0*load/pkts.size()<<'%'<<endl;
+        }
         base=max(base,req.seq);
         if(base==pkts.size()){
             cout<<"FINACK"<<endl;
             break;
         }
+
     }
     cout<<"End of while loop"<<endl;
     close(sock);
