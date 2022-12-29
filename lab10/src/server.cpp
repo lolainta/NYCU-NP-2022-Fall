@@ -117,10 +117,11 @@ int main(int argc,char*argv[]){
         if(base==pkts.size()){
             cout<<"Received last packet."<<endl;
             for(int i=0;i<10;++i){
-                uint8_t*buf=(uint8_t*)calloc(sizeof(request),1);
+                uint8_t*buf=(uint8_t*)calloc(20+sizeof(request),1);
                 iphdr*iph=(iphdr*)buf;
                 memcpy(buf+20,&req,sizeof(req));
                 send(sock,buf,sizeof(buf),0);
+                free(buf);
             }
             break;
         }

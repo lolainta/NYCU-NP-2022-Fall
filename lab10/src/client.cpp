@@ -70,7 +70,7 @@ cstr curTime(){
 }
 
 void send_resp(const response&resp){
-    uint8_t*buf=(uint8_t*)calloc(sizeof(response),1);
+    uint8_t*buf=(uint8_t*)calloc(20+sizeof(response),1);
     iphdr*iph=(iphdr*)buf;
     fill(iph,dst_ip,sizeof(response));
     memcpy(buf+20,&resp,sizeof(resp));

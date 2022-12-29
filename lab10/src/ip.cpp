@@ -4,7 +4,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-
 void fill(iphdr*iph,char*dst_ip,int len){
 	iph->ihl=5;
     iph->version=4;
