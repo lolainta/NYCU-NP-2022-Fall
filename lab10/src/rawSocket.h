@@ -6,14 +6,14 @@
 #include <cstdint>
 
 class RawSocket{
-    unsigned int fragSize;
+    int protocol;
     char*dst_ip;
     iphdr*iph;
     int sock;
     void gen_iphdr(size_t);
 public:
-    RawSocket();
-    void set_iphdr(char*,unsigned int);
+    RawSocket(bool,int);
+    void set_iphdr(char*);
     ssize_t send(uint8_t*,size_t);
     ssize_t read(uint8_t*,size_t);
 };

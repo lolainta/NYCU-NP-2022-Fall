@@ -9,7 +9,7 @@ using namespace std;
 
 const int BS=3072;
 
-typedef struct __attribute__((packed))request{
+typedef struct request{
     uint32_t seq;
     uint32_t par;
 	uint8_t flag;

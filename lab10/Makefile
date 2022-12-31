@@ -6,12 +6,10 @@ TEST_DIR := ./test
 TEST_SRC_DIR := $(TEST_DIR)/src
 TEST_DEST_DIR := $(TEST_DIR)/dest
 
-_OBJS := response.o request.o fileIO.o payload.o
+_OBJS := fileIO.o payload.o rawSocket.o response.o request.o
 OBJS := $(patsubst %.o,$(BUILD_DIR)/%.o,$(_OBJS))
 
-SNAPPY_FLAG := -I lib/snappy/ -I lib/snappy/build -L lib/snappy/build/ -lsnappy 
-
-PARAM_FLAGS := -DPAYLOAD=300 -DPROTOCOL=161
+PARAM_FLAGS := -DPAYLOAD=800
 
 CXX := g++
 CPPFLAGS := -Ofast -g -Wall -std=c++17 -static $(PARAM_FLAGS)

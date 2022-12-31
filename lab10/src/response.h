@@ -3,7 +3,7 @@
 
 #include <cstdint>
 
-typedef struct __attribute__((packed))response{
+typedef struct response{
     uint32_t seq;
     uint8_t payload[PAYLOAD];
 	uint8_t flag;
