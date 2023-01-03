@@ -98,11 +98,12 @@ void Config::parseZone(cstr&zone,cstr&zfile){
         case TYPE::A:
             assert(rec.size()==1);
             val.rdlength=4;
-            cout<<inet_addr(rec[0].c_str())<<endl;
+            inet_pton(AF_INET,rec[0].c_str(),(uint8_t*)val.a->ip);
             break;
         case TYPE::AAAA:
             assert(rec.size()==1);
             val.rdlength=16;
+            inet_pton(AF_INET6,rec[0].c_str(),(uint8_t*)val.a->ip);
             break;
         default:
             cerr<<"Internal error"<<endl;

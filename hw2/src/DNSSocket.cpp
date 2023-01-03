@@ -13,7 +13,7 @@ Message DNSSocket::get(){
     memcpy(last,buf,len);
     llen=len;
     Message ret;
-    dump(buf,len);
+    // dump(buf,len);
     parse(ret,buf);
     return ret;
 }
@@ -259,6 +259,8 @@ size_t DNSSocket::genResourceRecord(uint8_t*dst,const ResourceRecord&rr){
         cur+=rr.txt->txt_data.size();
         break;
     case TYPE::AAAA:
+        for(size_t i=0;i<rr.rdlength;++i)
+            dst[cur++]=rr.a->ip[i];
         break;
     default:
         break;
