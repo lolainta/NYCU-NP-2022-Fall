@@ -34,7 +34,7 @@ bool Message::operator ()const{
 */
 
 ResourceRecord::ResourceRecord(){};
-ResourceRecord::ResourceRecord(TYPE _type,uint32_t _ttl):rtype(_type),ttl(_ttl),rclass(CLASS::IN){
+ResourceRecord::ResourceRecord(TYPE _type,uint32_t _ttl):rtype(_type),rclass(CLASS::IN),ttl(_ttl){
     switch(_type){
     case TYPE::CNAME:
         this->cname=new CNAME_t;

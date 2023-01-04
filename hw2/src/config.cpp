@@ -170,13 +170,12 @@ void Config::showConfig()const{
 }
 
 bool Config::check(const tuple<vector<string>,CLASS,TYPE>&k)const{
-    // tuple<vector<string>,CLASS,TYPE> k(query.qname,query.qclass,query.qtype);
     return records.count(k);
 }
 
 ResourceRecord Config::getConfig(const tuple<vector<string>,CLASS,TYPE>&k)const{
     assert(records.count(k)==1);
-    showRR(records.at(k));
+//    showRR(records.at(k));
     return records.at(k);
 }
 
@@ -187,7 +186,8 @@ bool Config::served(const vector<string>&name)const{
 bool Config::inDomain(const vector<string>&name)const{
     for(const auto&[domain,_]:domains){
         const auto&dom=split(domain,'.');
-        assert(dom.size()<=name.size());
+        if(dom.size()>name.size())
+            return false;
         for(size_t i=0;i<dom.size();--i)
             if(dom[dom.size()-1-i]!=name[name.size()-1-i])
                 return false;
@@ -240,13 +240,19 @@ vector<ResourceRecord> Config::getAuth(const Question&query)const{
     vector<ResourceRecord> ret;
     if(check(k) and get<2>(k)!=TYPE::NS){
         cout<<"Record found, return NS in authority"<<endl;
-        get<0>(k).erase(get<0>(k).begin());
+        if(get<2>(k)==TYPE::A)
+            get<0>(k).erase(get<0>(k).begin());
         get<2>(k)=TYPE::NS;
         assert(check(k));
         ret.push_back(getConfig(k));
     }else if(!check(k)){
         cout<<"No record, return SOA in authority"<<endl;
         get<2>(k)=TYPE::SOA;
+        assert(get<0>(k).size()>=2);
+        auto domain=get<0>(k);
+        get<0>(k).clear();
+        get<0>(k).push_back(domain.at(domain.size()-2));
+        get<0>(k).push_back(domain.back());
         assert(check(k));
         ret.push_back(getConfig(k));
     }

@@ -7,26 +7,6 @@
 #include "config.h"
 using namespace std;
 
-ResourceRecord solA(const Question&ques,const Config&conf){
-    ResourceRecord ret;
-    ret.rtype=A;
-    ret.rclass=IN;
-    ret.rname=ques.qname;
-    ret.ttl=1;
-    ret.rdlength=4;
-    uint8_t ip[4]={0xff,0xff,0xff,0xff};
-    switch(ret.rtype){
-      case A:
-        ret.a=new A_t;
-        memcpy(ret.a,ip,4);
-        break;
-      default:
-        cout<<"Not implemented type!"<<endl;
-        exit(1);
-    }
-    return ret;
-}
-
 int main(int argc,char**argv){
     assert(argc==3);
     const int port(stoi(argv[1]));
@@ -39,9 +19,6 @@ int main(int argc,char**argv){
     UDPSocket fwdSock(conf.getForward(),53);
 
     while(Message msg=sock.get()){
-        cout<<"====== query =====";
-        sock.info(msg);
-        cout<<"====== query ====="<<endl;
         assert(msg.ques.size()==1);
         assert(msg.ques.front().qclass==CLASS::IN);
         if(conf.served(msg.ques.front().qname)){

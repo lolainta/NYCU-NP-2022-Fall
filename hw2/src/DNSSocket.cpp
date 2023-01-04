@@ -13,7 +13,7 @@ Message DNSSocket::get(){
     memcpy(last,buf,len);
     llen=len;
     Message ret;
-    // dump(buf,len);
+//    dump(buf,len);
     parse(ret,buf);
     return ret;
 }
@@ -21,7 +21,7 @@ Message DNSSocket::get(){
 size_t DNSSocket::put(const Message&msg){
     uint8_t buf[1000];
     ssize_t len=gen(buf,msg);
-    dump(buf,len);
+//    dump(buf,len);
     return reply(buf,len);
 }
 
