@@ -42,28 +42,29 @@ int main(int argc,char**argv){
         cout<<"====== query =====";
         sock.info(msg);
         cout<<"====== query ====="<<endl;
-
-        Message reply(msg.ques.size(),msg.ques.size(),0,0);
-        reply.hdr.id=msg.hdr.id;
-        reply.hdr.qr=1;
-        for(size_t i=0;i<reply.ques.size();++i){
-            reply.ques[i]=msg.ques[i];
-            assert(msg.ques[i].qclass==CLASS::IN);
-            if(conf.check(msg.ques[i])){
-                cout<<"Query found in config file"<<endl;;
-                reply.ans[i]=conf.getConfig(msg.ques[i]);
-                continue;
-            }
-            cout<<"Query not found"<<endl;
+        assert(msg.ques.size()==1);
+        assert(msg.ques.front().qclass==CLASS::IN);
+        if(conf.inDomain(msg.ques.front().qname)){
+            cout<<"Query is in served domain"<<endl;
+            Message reply(0,0,0,0);
+            reply.hdr.id=msg.hdr.id;
+            reply.hdr.qr=1;
+            reply.ques.push_back(msg.ques.front());
+            reply.ans=conf.getAns(msg.ques.front());
+            reply.auth=conf.getAuth(msg.ques.front());
+            reply.add=conf.getAdd(reply.ans);
+            reply.hdr.qdcount=reply.ques.size();
+            reply.hdr.ancount=reply.ans.size();
+            reply.hdr.nscount=reply.auth.size();
+            reply.hdr.arcount=reply.add.size();
+            sock.put(reply);
+        }else{
             auto cur=sock.getLast();
             fwdSock.send(cur.first,cur.second);
             uint8_t ans[1000];
             ssize_t rlen=fwdSock.read(ans,sizeof(ans));
             sock.reply(ans,rlen);
-            break;
         }
-        sock.put(reply);
-//        break;
     }
     return 0;
 }

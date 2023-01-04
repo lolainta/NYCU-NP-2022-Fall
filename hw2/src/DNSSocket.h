@@ -25,6 +25,8 @@ class DNSSocket:public UDPSocket{
     size_t genQuestion(uint8_t*,const Question&);
     size_t genResourceRecord(uint8_t*,const ResourceRecord&);
     size_t genAnswer(uint8_t*,const ResourceRecord&);
+    size_t genAuthority(uint8_t*,const ResourceRecord&);
+    size_t genAdditional(uint8_t*,const ResourceRecord&);
 public:
     DNSSocket(int);
     Message get();

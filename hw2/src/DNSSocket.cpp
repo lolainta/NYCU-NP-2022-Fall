@@ -22,9 +22,6 @@ size_t DNSSocket::put(const Message&msg){
     uint8_t buf[1000];
     ssize_t len=gen(buf,msg);
     dump(buf,len);
-//    Message tmp;
-//    parse(tmp,buf);
-//    info(tmp);
     return reply(buf,len);
 }
 
@@ -132,25 +129,28 @@ void DNSSocket::info(const Message&msg)const{
         printf("type=%d,class=%d\n",ques.qtype,ques.qclass);
     }
 
-    printf("\n[Answers]\n");
-    for(const auto&ans:msg.ans){
-        printf("name=");
-        for(auto n:ans.rname)
-            printf("%s.",n.c_str());
-        printf("\n");
-        printf("type=%d,class=%d,ttl=%d,rdlength=%d\n",ans.rtype,ans.rclass,ans.ttl,ans.rdlength);
-        printf("rdata=`not imlmeneted yet!`\n");
-    }
+    // printf("\n[Answers]\n");
+    // for(const auto&ans:msg.ans){
+    //     printf("name=");
+    //     for(auto n:ans.rname)
+    //         printf("%s.",n.c_str());
+    //     printf("\n");
+    //     printf("type=%d,class=%d,ttl=%d,rdlength=%d\n",ans.rtype,ans.rclass,ans.ttl,ans.rdlength);
+    //     printf("rdata=`not imlmeneted yet!`\n");
+    // }
 }
 
 size_t DNSSocket::gen(uint8_t*dst,const Message&msg){
     size_t cur=0;
     cur+=genHeader(dst,msg.hdr);
-    for(size_t i=0;i<msg.hdr.qdcount;++i){
+    for(size_t i=0;i<msg.hdr.qdcount;++i)
         cur+=genQuestion(dst+cur,msg.ques[i]);
-    }
     for(size_t i=0;i<msg.hdr.ancount;++i)
         cur+=genAnswer(dst+cur,msg.ans[i]);
+    for(size_t i=0;i<msg.hdr.nscount;++i)
+        cur+=genAuthority(dst+cur,msg.auth[i]);
+    for(size_t i=0;i<msg.hdr.arcount;++i)
+        cur+=genAdditional(dst+cur,msg.add[i]);
     return cur; 
 }
 
@@ -216,6 +216,12 @@ size_t DNSSocket::genResourceRecord(uint8_t*dst,const ResourceRecord&rr){
     cur+=sizeof(rr.ttl);
     memcpy(dst+cur,&trr.rdlength,sizeof(trr.rdlength));
     cur+=sizeof(rr.rdlength);
+
+    trr.rtype=(TYPE)__builtin_bswap16(trr.rtype);
+    trr.rclass=(CLASS)__builtin_bswap16(trr.rclass);
+    trr.ttl=__builtin_bswap32(trr.ttl);
+    trr.rdlength=__builtin_bswap16(trr.rdlength);
+
     switch(rr.rtype){
     case TYPE::A:
         for(size_t i=0;i<rr.rdlength;++i)
@@ -246,6 +252,11 @@ size_t DNSSocket::genResourceRecord(uint8_t*dst,const ResourceRecord&rr){
         cur+=sizeof(rr.soa->expire);
         memcpy(dst+cur,&rr.soa->minumun,sizeof(rr.soa->minumun));
         cur+=sizeof(rr.soa->minumun);
+        trr.soa->serial=__builtin_bswap32(rr.soa->serial);
+        trr.soa->refresh=__builtin_bswap32(rr.soa->refresh);
+        trr.soa->retry=__builtin_bswap32(rr.soa->retry);
+        trr.soa->expire=__builtin_bswap32(rr.soa->expire);
+        trr.soa->minumun=__builtin_bswap32(rr.soa->minumun);
         break;
     case TYPE::MX:
         trr.mx=rr.mx;
@@ -253,6 +264,7 @@ size_t DNSSocket::genResourceRecord(uint8_t*dst,const ResourceRecord&rr){
         memcpy(dst+cur,&rr.mx->preference,sizeof(rr.mx->preference));
         cur+=sizeof(rr.mx->preference);
         cur+=genName(dst+cur,rr.mx->exchange);
+        trr.mx->preference=__builtin_bswap16(rr.mx->preference);
         break;
     case TYPE::TXT:
         memcpy(dst+cur,rr.txt->txt_data.c_str(),rr.txt->txt_data.size());
@@ -274,6 +286,13 @@ size_t DNSSocket::genAnswer(uint8_t*dst,const ResourceRecord&ans){
     return genResourceRecord(dst,ans);
 }
 
+size_t DNSSocket::genAuthority(uint8_t*dst,const ResourceRecord&ans){
+    return genResourceRecord(dst,ans);
+}
+
+size_t DNSSocket::genAdditional(uint8_t*dst,const ResourceRecord&ans){
+    return genResourceRecord(dst,ans);
+}
 
 pair<uint8_t*,ssize_t> DNSSocket::getLast(){
     return make_pair(last,llen);

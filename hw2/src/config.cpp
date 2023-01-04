@@ -114,7 +114,7 @@ void Config::parseZone(cstr&zone,cstr&zfile){
     ifs.close();
 }
 
-vector<str> Config::split(cstr&inp,char delim){
+vector<str> Config::split(cstr&inp,char delim)const{
     vector<str> ret;
     size_t pos=0;
     size_t nxt;
@@ -142,6 +142,7 @@ void Config::showRR(const ResourceRecord&rr)const{
     cout<<endl;
     cout<<"rtype="<<rr.rtype<<",rclass="<<rr.rclass<<",rr.ttl="<<rr.ttl<<",rr.rdlength="<<rr.rdlength<<endl;
 }
+
 void Config::load(cstr&file){
     configFile=file;
     parseMeta();
@@ -168,14 +169,82 @@ void Config::showConfig()const{
     }
 }
 
-bool Config::check(const Question&query)const{
-    tuple<vector<string>,CLASS,TYPE> k(query.qname,query.qclass,query.qtype);
+bool Config::check(const tuple<vector<string>,CLASS,TYPE>&k)const{
+    // tuple<vector<string>,CLASS,TYPE> k(query.qname,query.qclass,query.qtype);
     return records.count(k);
 }
 
-ResourceRecord Config::getConfig(const Question&query)const{
-    tuple<vector<string>,CLASS,TYPE> k(query.qname,query.qclass,query.qtype);
+ResourceRecord Config::getConfig(const tuple<vector<string>,CLASS,TYPE>&k)const{
     assert(records.count(k)==1);
     showRR(records.at(k));
     return records.at(k);
+}
+
+bool Config::inDomain(const vector<string>&name)const{
+    for(const auto&[domain,_]:domains){
+        const auto&dom=split(domain,'.');
+        assert(dom.size()<=name.size());
+        for(size_t i=0;i<dom.size();--i){
+            if(dom[dom.size()-1-i]!=name[name.size()-1-i])
+                return false;
+        }
+    }
+    return true;
+}
+
+vector<ResourceRecord> Config::getAns(const Question&query)const{
+    tuple<vector<string>,CLASS,TYPE> k(query.qname,query.qclass,query.qtype);
+    if(check(k))
+        return vector<ResourceRecord>(1,getConfig(k));
+    else
+        return vector<ResourceRecord>();
+}
+
+vector<ResourceRecord> Config::getAuth(const Question&query)const{
+    tuple<vector<string>,CLASS,TYPE> k(query.qname,query.qclass,query.qtype);
+    vector<ResourceRecord> ret;
+    if(check(k) and get<2>(k)!=TYPE::NS){
+        cout<<"Record found, return NS in authority"<<endl;
+        get<0>(k).erase(get<0>(k).begin());
+        get<2>(k)=TYPE::NS;
+        assert(check(k));
+        ret.push_back(getConfig(k));
+    }else if(!check(k)){
+        cout<<"No record, return SOA in authority"<<endl;
+        get<2>(k)=TYPE::SOA;
+        assert(check(k));
+        ret.push_back(getConfig(k));
+    }
+    return ret;
+}
+
+vector<ResourceRecord> Config::getAdd(const vector<ResourceRecord>&answer)const{
+    vector<ResourceRecord> ret;
+    for(auto&ans:answer){
+        tuple<vector<string>,CLASS,TYPE> k(ans.rname,ans.rclass,ans.rtype);
+        if(get<2>(k)==TYPE::CNAME or get<2>(k)==TYPE::MX or get<2>(k)==TYPE::NS){
+            cout<<"Found TYPE="<<get<2>(k)<<", generate additional record"<<endl;
+            switch(get<2>(k)){
+            case TYPE::NS:
+                get<0>(k)=ans.ns->nsdname;
+                break;
+            case TYPE::MX:
+                get<0>(k)=ans.mx->exchange;
+                break;
+            case TYPE::CNAME:
+                get<0>(k)=ans.cname->cname;
+                break;
+            default:
+                cerr<<"Internall error"<<endl;
+                exit(1);
+            }
+            get<2>(k)=TYPE::A;
+            if(check(k))
+                ret.push_back(getConfig(k));
+            get<2>(k)=TYPE::AAAA;
+            if(check(k))
+                ret.push_back(getConfig(k));
+        }
+    }
+    return ret;
 }

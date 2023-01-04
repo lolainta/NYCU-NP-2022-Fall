@@ -20,16 +20,20 @@ class Config{
     map<tuple<vector<string>,CLASS,TYPE>,ResourceRecord> records;
     void parseMeta();
     void parseZone(cstr&,cstr&);
-    vector<str> split(cstr&,char);
+    vector<str> split(cstr&,char)const;
     uint16_t getLength(const vector<str>&);
     void showRR(const ResourceRecord&)const;
+    ResourceRecord getConfig(const tuple<vector<string>,CLASS,TYPE>&)const;
+    bool check(const tuple<vector<string>,CLASS,TYPE> &)const;
 public:
     Config();
     void load(cstr&);
     const char*getForward()const;
     void showConfig()const;
-    bool check(const Question&)const;
-    ResourceRecord getConfig(const Question&)const;
+    bool inDomain(const vector<string>&name)const;
+    vector<ResourceRecord> getAns(const Question&)const;
+    vector<ResourceRecord> getAuth(const Question&)const;
+    vector<ResourceRecord> getAdd(const vector<ResourceRecord>&)const;
 };
 
 #endif
