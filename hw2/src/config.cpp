@@ -180,19 +180,52 @@ ResourceRecord Config::getConfig(const tuple<vector<string>,CLASS,TYPE>&k)const{
     return records.at(k);
 }
 
+bool Config::served(const vector<string>&name)const{
+    return match(name).size() or inDomain(name);
+}
+
 bool Config::inDomain(const vector<string>&name)const{
     for(const auto&[domain,_]:domains){
         const auto&dom=split(domain,'.');
         assert(dom.size()<=name.size());
-        for(size_t i=0;i<dom.size();--i){
+        for(size_t i=0;i<dom.size();--i)
             if(dom[dom.size()-1-i]!=name[name.size()-1-i])
                 return false;
-        }
+        
     }
     return true;
 }
 
+vector<string> Config::match(const vector<string>&name)const{
+    vector<string> ret;
+    smatch sm;
+    for(const auto&[domain,_]:domains){
+        str expf("^([0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3}\\.[0-9]{1,3})\\.([0-9a-zA-Z]{1,61}\\.)*");
+        expf+=domain+'$';
+        regex exp(expf);
+        str join;
+        for(const auto&n:name)
+            join+=n+'.';
+        if(regex_match(join.cbegin(),join.cend(),sm,exp)){
+            for(auto x:sm)
+                ret.emplace_back(x);
+            return ret;
+        }
+    }
+    return ret;
+}
+
 vector<ResourceRecord> Config::getAns(const Question&query)const{
+    const auto&sm=match(query.qname);
+    if(sm.size()){
+        ResourceRecord ret(TYPE::A,1);
+        ret.rname=split(sm[0],'.');
+        ret.rclass=CLASS::IN;
+        ret.ttl=1;
+        ret.rdlength=4;
+        inet_pton(AF_INET,sm[1].c_str(),(uint8_t*)ret.a->ip);
+        return vector<ResourceRecord>(1,ret);
+    }
     tuple<vector<string>,CLASS,TYPE> k(query.qname,query.qclass,query.qtype);
     if(check(k))
         return vector<ResourceRecord>(1,getConfig(k));
@@ -201,6 +234,8 @@ vector<ResourceRecord> Config::getAns(const Question&query)const{
 }
 
 vector<ResourceRecord> Config::getAuth(const Question&query)const{
+    if(match(query.qname).size())
+        return vector<ResourceRecord>();
     tuple<vector<string>,CLASS,TYPE> k(query.qname,query.qclass,query.qtype);
     vector<ResourceRecord> ret;
     if(check(k) and get<2>(k)!=TYPE::NS){
@@ -221,6 +256,8 @@ vector<ResourceRecord> Config::getAuth(const Question&query)const{
 vector<ResourceRecord> Config::getAdd(const vector<ResourceRecord>&answer)const{
     vector<ResourceRecord> ret;
     for(auto&ans:answer){
+        if(match(ans.rname).size())
+            return ret;
         tuple<vector<string>,CLASS,TYPE> k(ans.rname,ans.rclass,ans.rtype);
         if(get<2>(k)==TYPE::CNAME or get<2>(k)==TYPE::MX or get<2>(k)==TYPE::NS){
             cout<<"Found TYPE="<<get<2>(k)<<", generate additional record"<<endl;

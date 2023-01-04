@@ -44,8 +44,8 @@ int main(int argc,char**argv){
         cout<<"====== query ====="<<endl;
         assert(msg.ques.size()==1);
         assert(msg.ques.front().qclass==CLASS::IN);
-        if(conf.inDomain(msg.ques.front().qname)){
-            cout<<"Query is in served domain"<<endl;
+        if(conf.served(msg.ques.front().qname)){
+            cout<<"Served"<<endl;
             Message reply(0,0,0,0);
             reply.hdr.id=msg.hdr.id;
             reply.hdr.qr=1;
@@ -59,6 +59,7 @@ int main(int argc,char**argv){
             reply.hdr.arcount=reply.add.size();
             sock.put(reply);
         }else{
+            cout<<"Forward"<<endl;
             auto cur=sock.getLast();
             fwdSock.send(cur.first,cur.second);
             uint8_t ans[1000];

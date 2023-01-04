@@ -5,6 +5,7 @@
 #include <map>
 #include <vector>
 #include <tuple>
+#include <regex>
 
 #include "message.h"
 
@@ -25,12 +26,14 @@ class Config{
     void showRR(const ResourceRecord&)const;
     ResourceRecord getConfig(const tuple<vector<string>,CLASS,TYPE>&)const;
     bool check(const tuple<vector<string>,CLASS,TYPE> &)const;
+    bool inDomain(const vector<string>&name)const;
+    vector<string> match(const vector<string>&name)const;
 public:
     Config();
     void load(cstr&);
     const char*getForward()const;
     void showConfig()const;
-    bool inDomain(const vector<string>&name)const;
+    bool served(const vector<string>&name)const;
     vector<ResourceRecord> getAns(const Question&)const;
     vector<ResourceRecord> getAuth(const Question&)const;
     vector<ResourceRecord> getAdd(const vector<ResourceRecord>&)const;
