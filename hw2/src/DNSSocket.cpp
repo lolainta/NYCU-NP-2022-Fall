@@ -21,7 +21,7 @@ Message DNSSocket::get(){
 size_t DNSSocket::put(const Message&msg){
     uint8_t buf[1000];
     ssize_t len=gen(buf,msg);
-//    dump(buf,len);
+    dump(buf,len);
     return reply(buf,len);
 }
 
@@ -267,6 +267,9 @@ size_t DNSSocket::genResourceRecord(uint8_t*dst,const ResourceRecord&rr){
         trr.mx->preference=__builtin_bswap16(rr.mx->preference);
         break;
     case TYPE::TXT:
+        trr.txt=rr.txt;
+        memcpy(dst+cur,&rr.txt->len,sizeof(rr.txt->len));
+        cur+=sizeof(rr.txt->len);
         memcpy(dst+cur,rr.txt->txt_data.c_str(),rr.txt->txt_data.size());
         cur+=rr.txt->txt_data.size();
         break;

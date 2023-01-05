@@ -28,6 +28,7 @@ struct SOA_t{
 };
 
 struct TXT_t{
+    uint8_t len;
     std::string txt_data;
 };
 

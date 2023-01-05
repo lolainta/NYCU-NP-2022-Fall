@@ -92,7 +92,8 @@ void Config::parseZone(cstr&zone,cstr&zfile){
             break;
         case TYPE::TXT:
             assert(rec.size()==1);
-            val.rdlength=rec[0].size();
+            val.txt->len=rec[0].size();
+            val.rdlength=rec[0].size()+1;
             val.txt->txt_data=rec[0];
             break;
         case TYPE::A:
@@ -186,7 +187,7 @@ bool Config::served(const vector<string>&name)const{
 bool Config::inDomain(const vector<string>&name)const{
     if(name.size()<2)
         return false;
-    const string dom=name[name.size()-2]+'.'+name.back();
+    const string dom=name[name.size()-2]+'.'+name.back()+'.';
     if(!domains.count(dom))
         return false;
     return true;
@@ -236,8 +237,10 @@ vector<ResourceRecord> Config::getAuth(const Question&query)const{
     vector<ResourceRecord> ret;
     if(check(k) and get<2>(k)!=TYPE::NS){
         cout<<"Record found, return NS in authority"<<endl;
-        if(get<2>(k)==TYPE::A)
-            get<0>(k).erase(get<0>(k).begin());
+        auto domain=get<0>(k);
+        get<0>(k).clear();
+        get<0>(k).push_back(domain.at(domain.size()-2));
+        get<0>(k).push_back(domain.back());
         get<2>(k)=TYPE::NS;
         assert(check(k));
         ret.push_back(getConfig(k));
