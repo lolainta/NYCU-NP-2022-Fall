@@ -184,15 +184,11 @@ bool Config::served(const vector<string>&name)const{
 }
 
 bool Config::inDomain(const vector<string>&name)const{
-    for(const auto&[domain,_]:domains){
-        const auto&dom=split(domain,'.');
-        if(dom.size()>name.size())
-            return false;
-        for(size_t i=0;i<dom.size();--i)
-            if(dom[dom.size()-1-i]!=name[name.size()-1-i])
-                return false;
-        
-    }
+    if(name.size()<2)
+        return false;
+    const string dom=name[name.size()-2]+'.'+name.back();
+    if(!domains.count(dom))
+        return false;
     return true;
 }
 
