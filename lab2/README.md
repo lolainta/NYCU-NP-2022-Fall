@@ -67,7 +67,6 @@ You may need the following functions/headers to complete this lab.
     * <stdint.h>
 
 Reference: https://man7.org/linux/man-pages/
-:::
 
 ## Hints
 
