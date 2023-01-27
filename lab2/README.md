@@ -56,7 +56,6 @@ This lab aims to practice binary file reading and handle binary data in data str
 1. Please test your program with [example.pak](https://inp111.zoolab.org/lab02.1/example.pak)
     * Note that the checksum of `f3.txt` in this example is incorrect. Therefore, your program should not unpack `f3.txt`.
 
-:::warning
 You may need the following functions/headers to complete this lab.
 * functions
     * [open(2)](https://man7.org/linux/man-pages/man2/open.2.html)
