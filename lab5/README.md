@@ -99,9 +99,7 @@ We do not have a rule on generating the user nickname. It can be a simple random
 * client 140.113.1.1:38864 disconnected
 ```
 
-:::success
 You may want to play with our sample implementation. You can connect to our sample implementation using the command ``nc inp111.zoolab.org 10005``.
-:::
 
 ## Demonstration
 
