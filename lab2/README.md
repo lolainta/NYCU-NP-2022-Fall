@@ -72,10 +72,10 @@ Reference: https://man7.org/linux/man-pages/
 * It is easier to handle binary data by reading byte streams into a user-defined data structure. For example, the data structure for the header part can be defined as
 ``` c
 typedef struct {
-        uint32_t magic;
-        int32_t  off_str;
-        int32_t  off_dat;
-        uint32_t n_files;
+    uint32_t magic;
+    int32_t  off_str;
+    int32_t  off_dat;
+    uint32_t n_files;
 } __attribute((packed)) pako_header_t;
 ```
 
